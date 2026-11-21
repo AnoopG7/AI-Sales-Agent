@@ -28,10 +28,10 @@ class LeadSource(StrEnum):
 
 class ConversationStage(StrEnum):
     GREETING = "greeting"
-    INFORMATION_GATHERING = "information_gathering"
-    PROPERTY_SEARCH = "property_search"
-    PROPERTY_PRESENTATION = "property_presentation"
-    SCHEDULING = "scheduling"
+    QUALIFICATION = "qualification"
+    DISCOVERY = "discovery"
+    PROPOSAL = "proposal"
+    DEMO_SCHEDULING = "demo_scheduling"
     FOLLOW_UP = "follow_up"
     CLOSED = "closed"
 
@@ -44,20 +44,25 @@ class MeetingStatus(StrEnum):
     NO_SHOW = "no_show"
 
 
-class PropertyStatus(StrEnum):
-    AVAILABLE = "available"
-    SOLD = "sold"
-    RENTED = "rented"
-    UNDER_OFFER = "under_offer"
+class ProductStatus(StrEnum):
+    ACTIVE = "active"
+    BETA = "beta"
+    DEPRECATED = "deprecated"
     ARCHIVED = "archived"
 
 
-class PropertyType(StrEnum):
-    APARTMENT = "apartment"
-    VILLA = "villa"
-    TOWNHOUSE = "townhouse"
-    PENTHOUSE = "penthouse"
-    STUDIO = "studio"
+class ProductCategory(StrEnum):
+    CRM = "crm"
+    ANALYTICS = "analytics"
+    AUTOMATION = "automation"
+    SUPPORT = "support"
+    ADD_ON = "add_on"
+
+
+class BillingPeriod(StrEnum):
+    MONTHLY = "monthly"
+    ANNUAL = "annual"
+    ONE_TIME = "one_time"
 
 
 class AdminRole(StrEnum):

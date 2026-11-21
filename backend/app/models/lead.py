@@ -14,9 +14,9 @@ class LeadBase(BaseModel):
     email: EmailStr | None = None
     budget_min: Decimal | None = Field(None, decimal_places=2, max_digits=12)
     budget_max: Decimal | None = Field(None, decimal_places=2, max_digits=12)
-    property_type: str | None = None
-    bedrooms_min: int | None = None
-    location: str | None = None
+    company: str | None = None
+    team_size: int | None = Field(None, ge=1)
+    product_interest: str | None = None
     notes: str | None = None
 
 

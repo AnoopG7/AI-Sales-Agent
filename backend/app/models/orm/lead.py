@@ -30,9 +30,9 @@ class Lead(Base):
     conversation_stage: Mapped[str | None] = mapped_column(String(40), default="greeting")
     budget_min: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     budget_max: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
-    property_type: Mapped[str | None]
-    bedrooms_min: Mapped[int | None]
-    location: Mapped[str | None]
+    company: Mapped[str | None]
+    team_size: Mapped[int | None]
+    product_interest: Mapped[str | None]
     notes: Mapped[str | None]
     assigned_to: Mapped[str | None]
     extra_data: Mapped[dict] = mapped_column(JSONB, default=dict)

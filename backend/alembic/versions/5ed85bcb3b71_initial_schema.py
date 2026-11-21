@@ -40,9 +40,9 @@ def upgrade() -> None:
     sa.Column('conversation_stage', sa.String(length=40), nullable=True),
     sa.Column('budget_min', sa.Numeric(precision=12, scale=2), nullable=True),
     sa.Column('budget_max', sa.Numeric(precision=12, scale=2), nullable=True),
-    sa.Column('property_type', sa.String(), nullable=True),
-    sa.Column('bedrooms_min', sa.Integer(), nullable=True),
-    sa.Column('location', sa.String(), nullable=True),
+    sa.Column('company', sa.String(), nullable=True),
+    sa.Column('team_size', sa.Integer(), nullable=True),
+    sa.Column('product_interest', sa.String(), nullable=True),
     sa.Column('notes', sa.String(), nullable=True),
     sa.Column('assigned_to', sa.String(), nullable=True),
     sa.Column('extra_data', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
@@ -52,20 +52,16 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_leads_whatsapp_phone'), 'leads', ['whatsapp_phone'], unique=False)
-    op.create_table('properties',
+    op.create_table('products',
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('title', sa.String(length=200), nullable=False),
+    sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
+    sa.Column('category', sa.String(length=30), nullable=False),
     sa.Column('price', sa.Numeric(precision=12, scale=2), nullable=False),
-    sa.Column('property_type', sa.String(length=30), nullable=False),
-    sa.Column('bedrooms', sa.Integer(), nullable=False),
-    sa.Column('bathrooms', sa.Integer(), nullable=False),
-    sa.Column('area_sqft', sa.Float(), nullable=True),
-    sa.Column('location', sa.String(length=200), nullable=False),
-    sa.Column('latitude', sa.Float(), nullable=True),
-    sa.Column('longitude', sa.Float(), nullable=True),
-    sa.Column('amenities', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-    sa.Column('images', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('billing_period', sa.String(length=20), nullable=False),
+    sa.Column('min_seats', sa.Integer(), nullable=False),
+    sa.Column('max_seats', sa.Integer(), nullable=True),
+    sa.Column('features', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('featured', sa.Boolean(), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('extra_data', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
@@ -131,7 +127,7 @@ def downgrade() -> None:
     op.drop_table('meetings')
     op.drop_table('conversations')
     op.drop_table('settings')
-    op.drop_table('properties')
+    op.drop_table('products')
     op.drop_index(op.f('ix_leads_whatsapp_phone'), table_name='leads')
     op.drop_table('leads')
     op.drop_table('admin_users')

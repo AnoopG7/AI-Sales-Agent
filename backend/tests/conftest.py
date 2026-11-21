@@ -18,33 +18,32 @@ def client() -> TestClient:
 def sample_lead_data() -> dict:
     """Sample lead data for tests."""
     return {
-        "phone": "971501234567",
-        "name": "Ahmed Al Maktoum",
-        "email": "ahmed@example.com",
+        "phone": "14155550132",
+        "name": "Jordan Lee",
+        "email": "jordan@example.com",
         "status": "new",
         "source": "meta_ads",
-        "budget_min": 1_000_000,
-        "budget_max": 3_000_000,
-        "preferred_type": "apartment",
-        "preferred_location": "Dubai Marina",
-        "preferred_bedrooms": 2,
+        "company": "Brightline Logistics",
+        "team_size": 25,
+        "product_interest": "sales pipeline and forecasting",
+        "budget_min": 500,
+        "budget_max": 1_500,
     }
 
 
 @pytest.fixture
-def sample_property_data() -> dict:
-    """Sample property data for tests."""
+def sample_product_data() -> dict:
+    """Sample product data for tests."""
     return {
-        "title": "Luxury 2BR Apartment in Dubai Marina",
-        "description": "Stunning sea view apartment with modern finishes",
-        "type": "apartment",
-        "location": "Dubai Marina",
-        "price": 2_500_000,
-        "bedrooms": 2,
-        "bathrooms": 3,
-        "area_sqft": 1_450,
-        "amenities": ["pool", "gym", "parking", "concierge"],
-        "status": "available",
+        "name": "CRM Growth",
+        "description": "Pipeline automation and forecasting for growing sales teams",
+        "category": "crm",
+        "price": 39,
+        "billing_period": "monthly",
+        "min_seats": 5,
+        "max_seats": 100,
+        "features": ["custom pipelines", "sales forecasting", "email sequences"],
+        "status": "active",
         "featured": True,
     }
 
@@ -62,22 +61,22 @@ def sample_webhook_payload() -> dict:
                         "value": {
                             "messaging_product": "whatsapp",
                             "metadata": {
-                                "display_phone_number": "971XXXXXXXXX",
+                                "display_phone_number": "1XXXXXXXXXX",
                                 "phone_number_id": "PHONE_NUMBER_ID",
                             },
                             "contacts": [
                                 {
-                                    "profile": {"name": "Ahmed"},
-                                    "wa_id": "971501234567",
+                                    "profile": {"name": "Jordan"},
+                                    "wa_id": "14155550132",
                                 }
                             ],
                             "messages": [
                                 {
-                                    "from": "971501234567",
+                                    "from": "14155550132",
                                     "id": "wamid.test123",
                                     "timestamp": "1714000000",
                                     "type": "text",
-                                    "text": {"body": "Hi, I'm interested in properties"},
+                                    "text": {"body": "Hi, I'd like to know about your CRM plans"},
                                 }
                             ],
                         },

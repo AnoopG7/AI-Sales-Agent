@@ -23,7 +23,7 @@ class GoogleCalendarClient:
         start_time: str,
         duration_minutes: int = 30,
         attendee_email: str | None = None,
-        timezone: str = "Asia/Dubai",
+        timezone: str = "UTC",
     ) -> dict:
         """Create a Google Calendar event with a Google Meet link."""
         # TODO: Implement with google-api-python-client

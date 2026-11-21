@@ -1,7 +1,7 @@
 [project]
 name = "leadgen-backend"
 version = "0.1.0"
-description = "Lead Generation & AI Automation Backend for Dubai Real Estate"
+description = "WhatsApp AI sales agent backend: lead qualification, product recommendations and demo booking"
 requires-python = ">=3.12"
 dependencies = [
     # Web Framework

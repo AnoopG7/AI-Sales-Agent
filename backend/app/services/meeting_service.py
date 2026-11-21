@@ -15,7 +15,7 @@ class MeetingService:
 
     async def schedule_meeting(
         self, lead_id: str, scheduled_at: str, duration: int = 30,
-        timezone: str = "Asia/Dubai", notes: str | None = None,
+        timezone: str = "UTC", notes: str | None = None,
     ) -> Meeting:
         meeting = await self.repo.create({
             "lead_id": lead_id,

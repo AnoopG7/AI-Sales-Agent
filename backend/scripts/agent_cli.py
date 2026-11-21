@@ -32,10 +32,10 @@ def _show_lead(lead):
     print(f"  Phone:       {lead.whatsapp_phone}")
     print(f"  Status:      {lead.status}")
     print(f"  Stage:       {lead.conversation_stage}")
-    print(f"  Property:    {_fmt(lead.property_type)}")
-    print(f"  Bedrooms:    {_fmt(lead.bedrooms_min)}")
-    print(f"  Location:    {_fmt(lead.location)}")
-    print(f"  Budget:      {_fmt(f'AED {lead.budget_min:,.0f}') if lead.budget_min else '—'} – {_fmt(f'AED {lead.budget_max:,.0f}') if lead.budget_max else '—'}")
+    print(f"  Company:     {_fmt(lead.company)}")
+    print(f"  Team size:   {_fmt(lead.team_size)}")
+    print(f"  Interest:    {_fmt(lead.product_interest)}")
+    print(f"  Budget:      {_fmt(f'{lead.budget_min:,.0f}') if lead.budget_min else '—'} – {_fmt(f'{lead.budget_max:,.0f}') if lead.budget_max else '—'}")
     print(f"  Email:       {_fmt(lead.email)}")
     print(f"  Notes:       {_fmt(lead.notes)}")
 
@@ -47,7 +47,7 @@ async def _amain():
 
     print()
     print("=" * 56)
-    print("  LeadGen Agent CLI — WhatsApp Simulator")
+    print("  Sales Agent CLI — WhatsApp Simulator")
     print("=" * 56)
     print("  Type 'help' for commands.")
     print()
@@ -181,7 +181,7 @@ async def _amain():
                 })
                 # ── End of webhook flow ─────────────────────────
 
-                print(f"  Sarah: {reply}")
+                print(f"  Agent: {reply}")
                 print()
 
                 # Show updated lead state
@@ -190,10 +190,10 @@ async def _amain():
                     current_lead = lead
                     print(f"  ├─ stage: {lead.conversation_stage}")
                     print(f"  ├─ status: {lead.status}")
-                    if lead.property_type:
-                        print(f"  ├─ {lead.property_type} | {_fmt(lead.bedrooms_min)}BR | {_fmt(lead.location)}")
+                    if lead.company or lead.team_size:
+                        print(f"  ├─ {_fmt(lead.company)} | {_fmt(lead.team_size)} seats | {_fmt(lead.product_interest)}")
                     if lead.budget_min or lead.budget_max:
-                        print(f"  └─ budget: {_fmt(f'AED {lead.budget_min:,.0f}') if lead.budget_min else '?'} – {_fmt(f'AED {lead.budget_max:,.0f}') if lead.budget_max else '?'}")
+                        print(f"  └─ budget: {_fmt(f'{lead.budget_min:,.0f}') if lead.budget_min else '?'} – {_fmt(f'{lead.budget_max:,.0f}') if lead.budget_max else '?'}")
                     print()
 
             # ── history ────────────────────────────────────────
@@ -207,7 +207,7 @@ async def _amain():
                     print("  No messages yet.")
                 else:
                     for m in msgs:
-                        role = "You" if m.role == "user" else "Sarah"
+                        role = "You" if m.role == "user" else "Agent"
                         c = m.content or ""
                         print(f"  [{role}] {c[:150]}")
                 print(f"  Total: {len(msgs)} messages")

@@ -12,7 +12,7 @@ class MeetingCreate(BaseModel):
     lead_id: str
     scheduled_at: datetime
     duration_minutes: int = Field(default=30, ge=15, le=120)
-    timezone: str = "Asia/Dubai"
+    timezone: str = "UTC"
     notes: str | None = None
 
 

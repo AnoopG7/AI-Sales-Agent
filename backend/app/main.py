@@ -71,8 +71,8 @@ def create_app() -> FastAPI:
     settings = get_settings()
 
     app = FastAPI(
-        title="LeadGen API",
-        description="Lead Generation & AI Automation API for Dubai Real Estate",
+        title="AI Sales Agent API",
+        description="WhatsApp AI sales agent: lead qualification, product recommendations and demo booking",
         version="0.1.0",
         lifespan=lifespan,
         docs_url="/docs" if not settings.is_production else None,

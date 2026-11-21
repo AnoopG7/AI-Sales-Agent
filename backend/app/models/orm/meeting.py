@@ -23,7 +23,7 @@ class Meeting(Base):
     )
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_minutes: Mapped[int] = mapped_column(Integer, default=30)
-    timezone: Mapped[str] = mapped_column(String(50), default="Asia/Dubai")
+    timezone: Mapped[str] = mapped_column(String(50), default="UTC")
     google_event_id: Mapped[str | None]
     meet_link: Mapped[str | None]
     status: Mapped[str] = mapped_column(String(20), default="scheduled")

@@ -18,8 +18,9 @@ import structlog
 from openai import RateLimitError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.prompts import GUARDRAILS, STAGE_INSTRUCTIONS, SYSTEM_PROMPT
+from app.agent.prompts import render_system_prompt
 from app.agent.tools import TOOL_DEFINITIONS, execute_tool
+from app.core.config import get_settings
 from app.integrations.llm_client import LLMClient
 from app.models.orm.lead import Lead
 from app.repositories.conversation_repo import ConversationRepository
@@ -186,14 +187,7 @@ async def process_message(
         # ── Rebuild system prompt if lead was modified ──────────────
         if modified_lead:
             lead = await lead_service.get_lead(lead_id)
-            stage = lead.conversation_stage or "greeting"
-            stage_instruction = STAGE_INSTRUCTIONS.get(stage, "")
-            messages[0]["content"] = (
-                f"{SYSTEM_PROMPT}\n\n"
-                f"## Lead Profile\n{_build_context(lead)}\n\n"
-                f"## Current Stage: {stage}\n{stage_instruction}\n\n"
-                f"{GUARDRAILS}"
-            )
+            messages[0]["content"] = _system_prompt(lead)
 
     # ── Exhausted tool rounds — force a final text-only response ─────────
     try:
@@ -214,8 +208,8 @@ async def process_message(
     lead_name = lead.name or "there"
     return (
         f"Thanks for your patience{', ' + lead_name if lead.name else ''}! "
-        "I've noted everything. Would you like to see more options, "
-        "schedule a visit, or is there anything specific I can help with? 🏠"
+        "I've noted everything. Would you like to compare plans, "
+        "book a demo, or is there anything specific I can help with? 👋"
     )
 
 
@@ -225,18 +219,8 @@ def _build_messages(
     user_message: str,
 ) -> list[dict]:
     """Build the messages array for the LLM API call."""
-    stage = lead.conversation_stage or "greeting"
-    stage_instruction = STAGE_INSTRUCTIONS.get(stage, "")
-
-    system = (
-        f"{SYSTEM_PROMPT}\n\n"
-        f"## Lead Profile\n{_build_context(lead)}\n\n"
-        f"## Current Stage: {stage}\n{stage_instruction}\n\n"
-        f"{GUARDRAILS}"
-    )
-
     messages: list[dict] = [
-        {"role": "system", "content": system},
+        {"role": "system", "content": _system_prompt(lead)},
     ]
 
     # Add conversation history
@@ -250,7 +234,19 @@ def _build_messages(
     return messages
 
 
-def _build_context(lead: Lead) -> str:
+def _system_prompt(lead: Lead) -> str:
+    """System prompt with fresh lead data, persona and stage instructions."""
+    settings = get_settings()
+    return render_system_prompt(
+        lead_context=_build_context(lead, settings.DEFAULT_CURRENCY),
+        stage=lead.conversation_stage or "greeting",
+        agent_name=settings.AGENT_NAME,
+        company_name=settings.COMPANY_NAME,
+        currency=settings.DEFAULT_CURRENCY,
+    )
+
+
+def _build_context(lead: Lead, currency: str) -> str:
     """Build a structured context block from lead data.
 
     Uses a readable format (not a single pipe-separated line) so the
@@ -267,18 +263,18 @@ def _build_context(lead: Lead) -> str:
 
     # Budget
     if lead.budget_min and lead.budget_max:
-        lines.append(f"- Budget: AED {lead.budget_min:,.0f} – AED {lead.budget_max:,.0f}")
+        lines.append(f"- Budget: {currency} {lead.budget_min:,.0f} – {currency} {lead.budget_max:,.0f}")
     elif lead.budget_max:
-        lines.append(f"- Budget: Up to AED {lead.budget_max:,.0f}")
+        lines.append(f"- Budget: Up to {currency} {lead.budget_max:,.0f}")
     elif lead.budget_min:
-        lines.append(f"- Budget: From AED {lead.budget_min:,.0f}")
+        lines.append(f"- Budget: From {currency} {lead.budget_min:,.0f}")
     else:
         lines.append("- Budget: Not specified yet")
 
-    # Preferences
-    lines.append(f"- Property type: {lead.property_type or 'Not specified yet'}")
-    lines.append(f"- Location: {lead.location or 'Not specified yet'}")
-    lines.append(f"- Bedrooms: {lead.bedrooms_min or 'Not specified yet'}")
+    # Company & needs
+    lines.append(f"- Company: {lead.company or 'Not provided yet'}")
+    lines.append(f"- Team size (seats): {lead.team_size or 'Not specified yet'}")
+    lines.append(f"- Product interest: {lead.product_interest or 'Not specified yet'}")
 
     # State
     lines.append(f"- Lead status: {lead.status}")

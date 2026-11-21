@@ -9,11 +9,12 @@ Each tool has:
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.integrations.email import EmailClient
 from app.models.lead import LeadUpdate
 from app.services.lead_service import LeadService
 from app.services.meeting_service import MeetingService
-from app.services.property_service import PropertyService
+from app.services.product_service import ProductService
 
 logger = structlog.get_logger()
 email_client = EmailClient()
@@ -24,31 +25,34 @@ TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
-            "name": "search_properties",
-            "description": "Search available Dubai properties by criteria (location, budget in AED, type, bedrooms).",
+            "name": "search_products",
+            "description": (
+                "Search active plans/products in the catalog by category, keyword, "
+                "price range (catalog currency) and team size."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "property_type": {
+                    "category": {
                         "type": "string",
-                        "enum": ["apartment", "villa", "townhouse", "penthouse", "studio"],
-                        "description": "Type of property",
+                        "enum": ["crm", "analytics", "automation", "support", "add_on"],
+                        "description": "Product category",
                     },
-                    "location": {
+                    "keyword": {
                         "type": "string",
-                        "description": "Area or community name in Dubai",
+                        "description": "Use case or feature keyword, e.g. 'forecasting' or 'live chat'",
                     },
                     "min_price": {
                         "type": "number",
-                        "description": "Minimum budget in AED",
+                        "description": "Minimum price in the catalog currency",
                     },
                     "max_price": {
                         "type": "number",
-                        "description": "Maximum budget in AED",
+                        "description": "Maximum price in the catalog currency",
                     },
-                    "bedrooms": {
+                    "team_size": {
                         "type": "integer",
-                        "description": "Minimum number of bedrooms",
+                        "description": "Number of seats the lead needs",
                     },
                 },
                 "required": [],
@@ -58,8 +62,8 @@ TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
-            "name": "list_all_properties",
-            "description": "List all available properties. Use when the lead asks to see everything.",
+            "name": "list_all_products",
+            "description": "List all active plans/products. Use when the lead asks to see everything.",
             "parameters": {
                 "type": "object",
                 "properties": {},
@@ -70,17 +74,17 @@ TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
-            "name": "get_property_details",
-            "description": "Get full details of a specific property by its UUID.",
+            "name": "get_product_details",
+            "description": "Get full details of a specific plan/product by its UUID.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "property_id": {
+                    "product_id": {
                         "type": "string",
-                        "description": "The UUID of the property",
+                        "description": "The UUID of the product",
                     },
                 },
-                "required": ["property_id"],
+                "required": ["product_id"],
             },
         },
     },
@@ -89,9 +93,9 @@ TOOL_DEFINITIONS = [
         "function": {
             "name": "convert_currency",
             "description": (
-                "Convert an amount between currencies (e.g. INR to AED). "
-                "Use this when a client mentions a budget in a non-AED currency "
-                "so you can search properties with the correct AED amount."
+                "Convert an amount between currencies (e.g. INR to USD). "
+                "Use this when a lead quotes a budget in a currency other than "
+                "the catalog currency, so searches use the right amount."
             ),
             "parameters": {
                 "type": "object",
@@ -102,11 +106,11 @@ TOOL_DEFINITIONS = [
                     },
                     "from_currency": {
                         "type": "string",
-                        "description": "Source currency code (e.g. INR, USD, GBP)",
+                        "description": "Source currency code (e.g. INR, EUR, GBP)",
                     },
                     "to_currency": {
                         "type": "string",
-                        "description": "Target currency code (e.g. AED, INR, USD)",
+                        "description": "Target currency code (e.g. USD)",
                     },
                 },
                 "required": ["amount", "from_currency", "to_currency"],
@@ -125,13 +129,16 @@ TOOL_DEFINITIONS = [
                 "type": "object",
                 "properties": {
                     "name": {"type": "string", "description": "Lead's full name"},
-                    "email": {"type": "string", "description": "Lead's email address"},
-                    "budget_min": {"type": "number", "description": "Minimum budget in AED. Null to clear."},
-                    "budget_max": {"type": "number", "description": "Maximum budget in AED. Null to clear."},
-                    "property_type": {"type": "string", "description": "Preferred property type"},
-                    "bedrooms_min": {"type": "integer", "description": "Minimum bedrooms. Null to clear."},
-                    "location": {"type": "string", "description": "Preferred location. Null to clear."},
-                    "notes": {"type": "string", "description": "Additional notes"},
+                    "email": {"type": "string", "description": "Lead's work email address"},
+                    "company": {"type": "string", "description": "Lead's company name"},
+                    "team_size": {"type": "integer", "description": "Seats needed. Null to clear."},
+                    "product_interest": {
+                        "type": "string",
+                        "description": "What they want to solve or which product they're interested in",
+                    },
+                    "budget_min": {"type": "number", "description": "Minimum budget in catalog currency. Null to clear."},
+                    "budget_max": {"type": "number", "description": "Maximum budget in catalog currency. Null to clear."},
+                    "notes": {"type": "string", "description": "Additional notes (role, timeline, current tools)"},
                 },
                 "required": [],
             },
@@ -148,8 +155,8 @@ TOOL_DEFINITIONS = [
                     "stage": {
                         "type": "string",
                         "enum": [
-                            "greeting", "information_gathering", "property_search",
-                            "property_presentation", "scheduling", "follow_up", "closed",
+                            "greeting", "qualification", "discovery",
+                            "proposal", "demo_scheduling", "follow_up", "closed",
                         ],
                         "description": "The conversation stage to move to",
                     },
@@ -162,7 +169,7 @@ TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "schedule_meeting",
-            "description": "Schedule a property site visit or meeting.",
+            "description": "Book a demo call or meeting with the sales team.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -176,7 +183,7 @@ TOOL_DEFINITIONS = [
                     },
                     "notes": {
                         "type": "string",
-                        "description": "Notes about the meeting or property to visit",
+                        "description": "Agenda, products to demo, or attendee notes",
                     },
                 },
                 "required": ["scheduled_at"],
@@ -187,7 +194,7 @@ TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "send_email",
-            "description": "Send property info or brochure via email to the lead.",
+            "description": "Email the lead a plan summary, pricing overview or meeting details.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -203,7 +210,10 @@ TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "transfer_to_human",
-            "description": "Transfer to a human team member for complex requests, negotiations, or when asked.",
+            "description": (
+                "Hand off to a human sales rep for custom pricing, contracts, "
+                "security reviews, or when the lead asks for a person."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -222,12 +232,12 @@ async def execute_tool(name: str, args: dict, lead_id: str, session: AsyncSessio
     """Execute a tool by name with given args. Returns a human-readable result string."""
     logger.info("tool_executing", tool=name, lead_id=lead_id, args=args)
     match name:
-        case "search_properties":
-            return await _search_properties(args, session)
-        case "list_all_properties":
-            return await _list_all_properties(session)
-        case "get_property_details":
-            return await _get_property_details(args, session)
+        case "search_products":
+            return await _search_products(args, session)
+        case "list_all_products":
+            return await _list_all_products(session)
+        case "get_product_details":
+            return await _get_product_details(args, session)
         case "convert_currency":
             return await _convert_currency(args)
         case "update_lead_info":
@@ -247,56 +257,62 @@ async def execute_tool(name: str, args: dict, lead_id: str, session: AsyncSessio
 # ─── Handlers ─────────────────────────────────────────────────────────────────
 
 
-async def _search_properties(args: dict, session: AsyncSession) -> str:
-    service = PropertyService(session)
-    results = await service.search_properties(
-        property_type=args.get("property_type"),
-        location=args.get("location"),
+def _seats(p) -> str:
+    if p.max_seats:
+        return f"{p.min_seats}-{p.max_seats} seats"
+    return f"{p.min_seats}+ seats"
+
+
+def _price(p) -> str:
+    currency = get_settings().DEFAULT_CURRENCY
+    period = {"monthly": "/seat/mo", "annual": "/seat/yr", "one_time": " one-time"}.get(p.billing_period, "")
+    return f"{currency} {p.price:,.2f}{period}"
+
+
+async def _search_products(args: dict, session: AsyncSession) -> str:
+    service = ProductService(session)
+    results = await service.search_products(
+        category=args.get("category"),
+        keyword=args.get("keyword"),
         min_price=args.get("min_price"),
         max_price=args.get("max_price"),
-        bedrooms=args.get("bedrooms"),
+        team_size=args.get("team_size"),
         limit=5,
     )
     if not results:
-        return "No properties found matching those criteria."
+        return "No products found matching those criteria."
 
-    lines = [f"Found {len(results)} matching properties:"]
+    lines = [f"Found {len(results)} matching products:"]
     for p in results:
-        beds = f"{p.bedrooms}BR" if p.bedrooms else "Studio"
-        lines.append(
-            f"- {p.title} | {beds} | AED {p.price:,.0f} | {p.location} | ID: {p.id}"
-        )
+        lines.append(f"- {p.name} | {p.category} | {_price(p)} | {_seats(p)} | ID: {p.id}")
     return "\n".join(lines)
 
 
-async def _list_all_properties(session: AsyncSession) -> str:
-    service = PropertyService(session)
-    results, total = await service.list_properties(page=1, page_size=20, status="available")
+async def _list_all_products(session: AsyncSession) -> str:
+    service = ProductService(session)
+    results, total = await service.list_products(page=1, page_size=20, status="active")
     if not results:
-        return "No properties available at the moment."
+        return "No products available at the moment."
 
-    lines = [f"All available properties ({total} total):"]
+    lines = [f"All active products ({total} total):"]
     for p in results:
-        beds = f"{p.bedrooms}BR" if p.bedrooms else "Studio"
-        lines.append(f"- {p.title} | {beds} | AED {p.price:,.0f} | {p.location}")
+        lines.append(f"- {p.name} | {p.category} | {_price(p)} | {_seats(p)} | ID: {p.id}")
     return "\n".join(lines)
 
 
-async def _get_property_details(args: dict, session: AsyncSession) -> str:
-    service = PropertyService(session)
-    prop = await service.get_property(args["property_id"])
-    if not prop:
-        return "Property not found."
-    area = f"{prop.area_sqft:,.0f}" if isinstance(prop.area_sqft, (int, float)) else "N/A"
-    amenities = ", ".join(prop.amenities) if prop.amenities else "N/A"
+async def _get_product_details(args: dict, session: AsyncSession) -> str:
+    service = ProductService(session)
+    product = await service.get_product(args["product_id"])
+    if not product:
+        return "Product not found."
+    features = ", ".join(product.features) if product.features else "N/A"
     return (
-        f"🏠 {prop.title}\n"
-        f"📍 {prop.location}\n"
-        f"💰 AED {prop.price:,.0f}\n"
-        f"🛏 {prop.bedrooms}BR | 🛁 {prop.bathrooms}BA | 📐 {area} sq.ft\n"
-        f"{'⭐ Featured\n' if prop.featured else ''}"
-        f"🏢 Amenities: {amenities}\n"
-        f"📝 {prop.description or 'No description'}"
+        f"{product.name} ({product.category})\n"
+        f"Price: {_price(product)}\n"
+        f"Seats: {_seats(product)}\n"
+        f"{'Featured plan\n' if product.featured else ''}"
+        f"Features: {features}\n"
+        f"{product.description or 'No description'}"
     )
 
 
@@ -316,16 +332,18 @@ async def _convert_currency(args: dict) -> str:
     rate = await _fetch_exchange_rate(from_cur, to_cur)
 
     if rate is None:
-        # Fallback to approximate rates (AED as base)
-        fallback_to_aed = {
-            "INR": 0.044,   # 1 INR ≈ 0.044 AED
-            "USD": 3.67,    # 1 USD ≈ 3.67 AED
-            "GBP": 4.65,    # 1 GBP ≈ 4.65 AED
-            "EUR": 4.00,    # 1 EUR ≈ 4.00 AED
-            "AED": 1.0,
+        # Fallback to approximate rates (USD as base)
+        fallback_to_usd = {
+            "USD": 1.0,
+            "EUR": 1.08,    # 1 EUR ≈ 1.08 USD
+            "GBP": 1.27,    # 1 GBP ≈ 1.27 USD
+            "INR": 0.012,   # 1 INR ≈ 0.012 USD
+            "AUD": 0.66,    # 1 AUD ≈ 0.66 USD
+            "CAD": 0.73,    # 1 CAD ≈ 0.73 USD
+            "SGD": 0.74,    # 1 SGD ≈ 0.74 USD
         }
-        from_rate = fallback_to_aed.get(from_cur)
-        to_rate = fallback_to_aed.get(to_cur)
+        from_rate = fallback_to_usd.get(from_cur)
+        to_rate = fallback_to_usd.get(to_cur)
         if from_rate and to_rate:
             rate = from_rate / to_rate
         else:

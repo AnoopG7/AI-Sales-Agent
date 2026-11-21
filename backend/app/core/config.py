@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     # --- Database ---
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/leadgen"
 
+    # --- Business ---
+    COMPANY_NAME: str = "Acme Cloud"
+    AGENT_NAME: str = "Ava"
+    DEFAULT_CURRENCY: str = "USD"
+
     # --- LLM Provider ---
     LLM_PROVIDER: str = "groq"  # "groq" or "ollama"
     OLLAMA_MODEL: str = "qwen3:8b"
@@ -49,7 +54,7 @@ class Settings(BaseSettings):
     # --- Google Calendar ---
     GOOGLE_SERVICE_ACCOUNT_JSON: str = ""
     GOOGLE_CALENDAR_ID: str = "primary"
-    GOOGLE_CALENDAR_TIMEZONE: str = "Asia/Dubai"
+    GOOGLE_CALENDAR_TIMEZONE: str = "UTC"
 
     # --- Email (SMTP) ---
     SMTP_HOST: str = ""

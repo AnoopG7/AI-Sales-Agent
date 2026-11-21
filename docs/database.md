@@ -27,27 +27,27 @@ PostgreSQL 16 running in Docker Compose. SQLAlchemy 2.0 async ORM with asyncpg d
 +------------------+       |    conversation_   |
                            |      stage         |
 +------------------+       |    budget_min      |
-|   PROPERTIES     |       |    budget_max      |
-+------------------+       |    property_type   |
-| PK id (uuid)     |       |    bedrooms_min    |
-|    title         |       |    location        |
+|    PRODUCTS      |       |    budget_max      |
++------------------+       |    company         |
+| PK id (uuid)     |       |    team_size       |
+|    name          |       |    product_interest|
 |    description   |       |    notes           |
-|    price         |       |    extra_data      |
-|    property_type |       |    last_contacted_ |
-|    bedrooms      |       |      at            |
-|    bathrooms     |       |    created_at      |
-|    area_sqft     |       |    updated_at      |
-|    location      |       +--------+----------+
-|    latitude      |                |
-|    longitude     |                | 1
-|    amenities     |                |
-|    images        |       +--------v----------+
-|    featured      |       |  CONVERSATIONS    |
-|    status        |       +-------------------+
-|    extra_data    |       | PK id (uuid)      |
-|    created_at    |       | FK lead_id (CASCADE)
-|    updated_at    |       |    role            |
-+------------------+       |    content         |
+|    category      |       |    extra_data      |
+|    price         |       |    last_contacted_ |
+|    billing_period|       |      at            |
+|    min_seats     |       |    created_at      |
+|    max_seats     |       |    updated_at      |
+|    features      |       +--------+----------+
+|    featured      |                |
+|    status        |                | 1
+|    extra_data    |                |
+|    created_at    |       +--------v----------+
+|    updated_at    |       |  CONVERSATIONS    |
++------------------+       +-------------------+
+                           | PK id (uuid)      |
+                           | FK lead_id (CASCADE)
+                           |    role            |
+                           |    content         |
                            |    message_type    |
 +------------------+       |    whatsapp_       |
 |   SETTINGS       |       |      message_id    |
@@ -110,9 +110,9 @@ CREATE TABLE leads (
     conversation_stage VARCHAR(40) DEFAULT 'greeting',
     budget_min NUMERIC(12, 2),
     budget_max NUMERIC(12, 2),
-    property_type VARCHAR,
-    bedrooms_min INTEGER,
-    location VARCHAR,
+    company VARCHAR,
+    team_size INTEGER,
+    product_interest VARCHAR,
     notes TEXT,
     assigned_to VARCHAR,
     extra_data JSONB DEFAULT '{}'::jsonb,
@@ -137,57 +137,42 @@ CREATE INDEX ix_leads_created_at ON leads (created_at DESC);
 
 **Source values:** `meta_ads`, `manual`, `referral`, `website`, `other`
 
-**Conversation stage values:** `greeting`, `information_gathering`, `property_search`, `property_presentation`, `scheduling`, `follow_up`, `closed`
+**Conversation stage values:** `greeting`, `qualification`, `discovery`, `proposal`, `demo_scheduling`, `follow_up`, `closed`
 
-### `properties`
+### `products`
 
-Dubai property listings searchable by the AI agent.
+The sales catalog (plans, products and add-ons) the AI agent searches and recommends.
 
 ```sql
-CREATE TABLE properties (
+CREATE TABLE products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title VARCHAR(200) NOT NULL,
+    name VARCHAR(200) NOT NULL,
     description TEXT,
+    category VARCHAR(30) NOT NULL,
     price NUMERIC(12, 2) NOT NULL,
-    property_type VARCHAR(30) NOT NULL,
-    bedrooms INTEGER NOT NULL DEFAULT 0,
-    bathrooms INTEGER NOT NULL DEFAULT 0,
-    area_sqft FLOAT,
-    location VARCHAR(200) NOT NULL,
-    latitude FLOAT,
-    longitude FLOAT,
-    amenities JSONB DEFAULT '[]'::jsonb,
-    images JSONB DEFAULT '[]'::jsonb,
+    billing_period VARCHAR(20) NOT NULL DEFAULT 'monthly',
+    min_seats INTEGER NOT NULL DEFAULT 1,
+    max_seats INTEGER,                 -- NULL = no upper limit
+    features JSONB DEFAULT '[]'::jsonb,
     featured BOOLEAN NOT NULL DEFAULT FALSE,
-    status VARCHAR(20) NOT NULL DEFAULT 'available',
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
     extra_data JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE INDEX ix_properties_status ON properties (status);
-CREATE INDEX ix_properties_type ON properties (property_type);
-CREATE INDEX ix_properties_location ON properties (location);
-CREATE INDEX ix_properties_price ON properties (price);
-CREATE INDEX ix_properties_featured ON properties (featured DESC);
-CREATE INDEX ix_properties_created_at ON properties (created_at DESC);
 ```
 
-**Property types:** `apartment`, `villa`, `townhouse`, `penthouse`, `studio`
+**Categories:** `crm`, `analytics`, `automation`, `support`, `add_on`
 
-**Status values:** `available`, `sold`, `rented`, `under_offer`, `archived`
+**Billing periods:** `monthly`, `annual`, `one_time` (price is per seat for monthly/annual)
 
-**Images format:**
+**Status values:** `active`, `beta`, `deprecated`, `archived` (the agent only searches `active`)
+
+**Seat matching:** a product fits a team of `n` when `min_seats <= n` and (`max_seats IS NULL` or `max_seats >= n`).
+
+**Features format:**
 ```json
-[
-  {"url": "https://...", "alt": "Living room", "order": 1},
-  {"url": "https://...", "alt": "Bedroom", "order": 2}
-]
-```
-
-**Amenities format:**
-```json
-["pool", "gym", "parking", "concierge", "sea_view"]
+["custom pipelines", "sales forecasting", "workflow automation"]
 ```
 
 ### `conversations`
@@ -218,7 +203,7 @@ CREATE INDEX ix_conversations_lead_created ON conversations (lead_id, created_at
 
 ### `meetings`
 
-Scheduled property visits or Google Meet calls.
+Scheduled demo calls (Google Meet when calendar sync is configured).
 
 ```sql
 CREATE TABLE meetings (
@@ -226,7 +211,7 @@ CREATE TABLE meetings (
     lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
     scheduled_at TIMESTAMPTZ NOT NULL,
     duration_minutes INTEGER NOT NULL DEFAULT 30,
-    timezone VARCHAR(50) NOT NULL DEFAULT 'Asia/Dubai',
+    timezone VARCHAR(50) NOT NULL DEFAULT 'UTC',
     google_event_id VARCHAR,
     meet_link VARCHAR,
     status VARCHAR(20) NOT NULL DEFAULT 'scheduled',
@@ -313,10 +298,11 @@ CREATE TABLE settings (
 |------|--------|
 | `LeadStatus` | `new`, `contacted`, `qualified`, `meeting_scheduled`, `converted`, `lost`, `spam` |
 | `LeadSource` | `meta_ads`, `manual`, `referral`, `website`, `other` |
-| `ConversationStage` | `greeting`, `information_gathering`, `property_search`, `property_presentation`, `scheduling`, `follow_up`, `closed` |
+| `ConversationStage` | `greeting`, `qualification`, `discovery`, `proposal`, `demo_scheduling`, `follow_up`, `closed` |
 | `MeetingStatus` | `scheduled`, `confirmed`, `completed`, `cancelled`, `no_show` |
-| `PropertyStatus` | `available`, `sold`, `rented`, `under_offer`, `archived` |
-| `PropertyType` | `apartment`, `villa`, `townhouse`, `penthouse`, `studio` |
+| `ProductStatus` | `active`, `beta`, `deprecated`, `archived` |
+| `ProductCategory` | `crm`, `analytics`, `automation`, `support`, `add_on` |
+| `BillingPeriod` | `monthly`, `annual`, `one_time` |
 | `AdminRole` | `admin`, `agent` |
 | `NotificationType` | `new_lead`, `lead_qualified`, `meeting_scheduled`, `escalation`, `system` |
 | `NotificationChannel` | `in_app`, `email`, `whatsapp`, `all` |
@@ -329,12 +315,6 @@ CREATE TABLE settings (
 | `leads` | `ix_leads_status` | B-tree | Filter leads by status |
 | `leads` | `ix_leads_source` | B-tree | Filter leads by source |
 | `leads` | `ix_leads_created_at` | B-tree (DESC) | Sort by most recent, pagination |
-| `properties` | `ix_properties_status` | B-tree | Filter by availability |
-| `properties` | `ix_properties_type` | B-tree | Filter by property type |
-| `properties` | `ix_properties_location` | B-tree | Filter by location |
-| `properties` | `ix_properties_price` | B-tree | Price range filtering |
-| `properties` | `ix_properties_featured` | B-tree (DESC) | Show featured first |
-| `properties` | `ix_properties_created_at` | B-tree (DESC) | Sort by newest |
 | `conversations` | `ix_conversations_lead_id` | B-tree | Get all messages for a lead |
 | `conversations` | `ix_conversations_lead_created` | Composite (lead_id, created_at) | Ordered history retrieval |
 | `meetings` | `ix_meetings_lead_id` | B-tree | Get all meetings for a lead |
@@ -355,22 +335,23 @@ CREATE TABLE settings (
 
 | Revision | Date | Description | SQL Changes |
 |----------|------|-------------|-------------|
-| `5ed85bcb3b71` | 2026-05-09 | Initial schema | Creates all 7 tables (`admin_users`, `leads`, `properties`, `conversations`, `meetings`, `notifications`, `settings`) with all columns, constraints, indexes, and foreign keys |
+| `5ed85bcb3b71` | 2026-05-09 | Initial schema | Creates all 7 tables (`admin_users`, `leads`, `products`, `conversations`, `meetings`, `notifications`, `settings`) with all columns, constraints, indexes, and foreign keys |
 | `7740dccae86c` | 2026-05-10 | Fix `last_contacted_at` timezone | Alters `leads.last_contacted_at` from `TIMESTAMP` (no timezone) to `TIMESTAMPTZ` (with timezone) |
 
 ## Common Query Patterns
 
-### Agent: Search properties by criteria
+### Agent: Search products by criteria
 ```python
-stmt = select(Property).where(
-    Property.status == "available",
-    Property.property_type == "apartment",
-    Property.price.between(1000000, 2000000),
-    Property.bedrooms >= 2,
-    Property.location.ilike("%marina%"),
-).limit(5)
+team_size = 25
+stmt = select(Product).where(
+    Product.status == "active",
+    Product.category == "crm",
+    Product.price <= 50,
+    Product.min_seats <= team_size,
+    or_(Product.max_seats.is_(None), Product.max_seats >= team_size),
+).order_by(Product.featured.desc(), Product.price.asc()).limit(5)
 result = await session.execute(stmt)
-properties = result.scalars().all()
+products = result.scalars().all()
 ```
 
 ### Agent: Get lead by phone (create if not found)

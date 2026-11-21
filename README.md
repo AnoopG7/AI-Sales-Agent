@@ -1,8 +1,38 @@
-# LeadGen
+# AI Sales Agent
 
-Dubai real estate lead generation platform. Inbound WhatsApp conversations are handled by an AI agent ("Sarah") that qualifies leads, searches properties, schedules meetings, and sends email notifications. An admin dashboard provides CRUD management for leads, properties, and meetings with analytics.
+A WhatsApp AI sales agent for B2B and B2C teams. Inbound leads (for example from Meta ads) message the business on WhatsApp, and the agent replies instantly: it qualifies the lead (company, team size, use case, budget, timeline), recommends the right plan from the product catalog, books a demo call, emails a summary, and hands off to a human rep for custom pricing or contracts. An admin dashboard manages leads, the catalog and meetings, with analytics.
 
-Target audience: **Indian buyers and NRIs** investing in Dubai real estate.
+The agent's name, company and catalog currency are set with environment variables, so the same system can sell any product.
+
+## How It Works
+
+```
+WhatsApp message ──> Meta webhook ──> verify HMAC signature ──> dedup by message ID
+                                                                       │
+                     lead auto-created on first message <──────────────┘
+                                                                       │
+                     agent loop (Groq / Ollama, 9 tools, max 10 rounds) ┘
+                       ├─ search_products / get_product_details / list_all_products
+                       ├─ update_lead_info / update_lead_stage   ──> system prompt rebuilt with fresh lead data
+                       ├─ schedule_meeting / send_email / convert_currency
+                       └─ transfer_to_human
+                                                                       │
+                     reply sent on WhatsApp, both messages stored <────┘
+```
+
+Each lead moves through 7 stages: `greeting → qualification → discovery → proposal → demo_scheduling → follow_up → closed`.
+
+## Design Decisions
+
+| Decision | Why |
+|----------|-----|
+| Raw function calling instead of LangChain/LangGraph | The whole loop is one ~170-line function; every message, tool call and retry is visible and debuggable |
+| Rebuild the system prompt after state-changing tools | Otherwise the model keeps the lead profile from the start of the turn and re-asks questions it just saved the answers to |
+| Cap at 10 tool rounds and 10 history messages | Bounds the worst-case token cost per inbound message on free-tier rate limits; a final tools-disabled call guarantees a reply |
+| Retry with backoff on 429 | Groq's free tier rate-limits bursts; a short backoff recovers most of them without failing the conversation |
+| HMAC verification + message-ID dedup on the webhook | Rejects forged requests, and Meta retries deliveries, so the same message must not be processed twice |
+| Catalog data only through tools | The prompt forbids inventing prices or features; everything the agent quotes comes from the database |
+| One OpenAI-compatible client for Groq and Ollama | Switch between hosted and local models with one env var |
 
 **Start here, then navigate to the appropriate doc:**
 - [`backend/README.md`](backend/README.md) — Backend stack, features, architecture decisions
@@ -40,7 +70,7 @@ Target audience: **Indian buyers and NRIs** investing in Dubai real estate.
 ## Full Directory Structure
 
 ```
-LeadGeneration/
+AI-LeadGen/
 ├── README.md                         # This file
 ├── .gitignore
 │
@@ -59,7 +89,7 @@ LeadGeneration/
 │   │       └── 7740dccae86c_fix_last_contacted_at_timezone.py
 │   ├── scripts/
 │   │   ├── agent_cli.py              # WhatsApp simulator CLI
-│   │   └── seed_properties.py        # Seed 20 Dubai properties
+│   │   └── seed_products.py          # Seed a sample B2B SaaS catalog
 │   ├── tests/
 │   │   ├── conftest.py               # Sample data fixtures
 │   │   ├── agent/
@@ -71,21 +101,21 @@ LeadGeneration/
 │       ├── agent/                    # AI agent
 │       │   ├── orchestrator.py       # process_message() loop
 │       │   ├── prompts.py            # System prompt, stage instructions, guardrails
-│       │   └── tools.py              # 8 tool definitions + handlers
+│       │   └── tools.py              # 9 tool definitions + handlers
 │       ├── api/v1/                   # REST API
 │       │   ├── router.py             # Route aggregation (6 routers)
 │       │   ├── deps.py               # get_db, get_current_user, require_admin
 │       │   └── endpoints/
 │       │       ├── auth.py           # 8 auth endpoints
 │       │       ├── leads.py          # 7 lead endpoints
-│       │       ├── properties.py     # 6 property endpoints
+│       │       ├── products.py       # 6 product catalog endpoints
 │       │       ├── meetings.py       # 6 meeting endpoints
 │       │       ├── analytics.py      # 4 analytics endpoints
 │       │       └── whatsapp.py       # GET (verify) + POST (process webhook)
 │       ├── core/                     # Cross-cutting infrastructure
 │       │   ├── config.py             # pydantic-settings (all env vars)
 │       │   ├── database.py           # AsyncEngine + async_sessionmaker
-│       │   ├── enums.py              # 9 StrEnum classes
+│       │   ├── enums.py              # 10 StrEnum classes
 │       │   ├── exceptions.py         # 6 custom exceptions + handlers
 │       │   ├── logging.py            # structlog configuration
 │       │   └── security.py           # bcrypt hash/verify, JWT create/decode
@@ -96,7 +126,7 @@ LeadGeneration/
 │       │   └── google_calendar.py    # Stub (hardcoded responses)
 │       ├── models/                   # Pydantic schemas
 │       │   ├── lead.py               # LeadBase, LeadCreate, LeadUpdate, LeadResponse
-│       │   ├── property.py           # PropertyBase, PropertyCreate, PropertyUpdate, PropertyResponse
+│       │   ├── product.py            # ProductBase, ProductCreate, ProductUpdate, ProductResponse
 │       │   ├── meeting.py            # MeetingCreate, MeetingUpdate, MeetingResponse, ConversationMessage
 │       │   ├── auth.py               # LoginRequest, SignupRequest, TokenResponse, etc.
 │       │   ├── admin.py              # AdminUserCreate, AdminUserResponse, etc.
@@ -104,7 +134,7 @@ LeadGeneration/
 │       │   └── orm/                  # SQLAlchemy ORM models
 │       │       ├── base.py           # DeclarativeBase
 │       │       ├── lead.py           # Lead model
-│       │       ├── property.py       # Property model
+│       │       ├── product.py        # Product model
 │       │       ├── conversation.py   # Conversation model
 │       │       ├── meeting.py        # Meeting model
 │       │       ├── admin_user.py     # AdminUser model
@@ -112,13 +142,13 @@ LeadGeneration/
 │       │       └── setting.py        # Setting model
 │       ├── repositories/            # Data access layer
 │       │   ├── lead_repo.py          # find_by_phone, find_by_id, list_all, create, update, delete
-│       │   ├── property_repo.py      # find_by_id, search, list_all, create, update, delete
+│       │   ├── product_repo.py       # find_by_id, search, list_all, create, update, delete
 │       │   ├── conversation_repo.py  # get_history, add_message, message_exists
 │       │   ├── admin_user_repo.py    # find_by_email, find_by_id, create, update_password, update
 │       │   └── meeting_repo.py       # find_by_id, list_all, get_upcoming, create, update
 │       ├── services/                # Business logic
 │       │   ├── lead_service.py       # get_or_create_by_phone, create, update, get, list
-│       │   ├── property_service.py   # search, get, list, create, update
+│       │   ├── product_service.py    # search, get, list, create, update
 │       │   ├── meeting_service.py    # schedule, get, list, upcoming, update
 │       │   ├── auth_service.py       # signup, login, refresh, change_password, reset
 │       │   └── analytics_service.py  # overview, leads_over_time, status/source breakdown
@@ -144,7 +174,7 @@ LeadGeneration/
 │       │   ├── ui/                   # 25 shadcn/ui primitives
 │       │   ├── layout/               # AppShell, Sidebar, Header, MobileNav, ThemeSwitcher
 │       │   ├── shared/               # DataTable, PageHeader, StatusBadge, etc.
-│       │   ├── forms/                # LeadForm, PropertyForm, MeetingForm, LoginForm, SettingsForm
+│       │   ├── forms/                # LeadForm, ProductForm, MeetingForm, LoginForm, SettingsForm
 │       │   └── auth/                 # ProtectedRoute
 │       ├── layouts/
 │       │   ├── auth-layout.tsx
@@ -153,7 +183,7 @@ LeadGeneration/
 │       ├── services/api.ts           # Axios instance with interceptors
 │       ├── schemas/validators.ts     # Zod schemas for all forms
 │       ├── types/index.ts            # TypeScript interfaces
-│       ├── config/constants.ts       # Enums, Dubai areas, nav items
+│       ├── config/constants.ts       # Statuses, categories, billing periods, nav items
 │       └── pages/
 │           └── homepage.tsx          # All components showcase
 │
@@ -178,7 +208,7 @@ uv sync
 
 # 3. Run migrations and seed data
 PYTHONPATH=. .venv/bin/python -m alembic upgrade head
-PYTHONPATH=. .venv/bin/python scripts/seed_properties.py
+PYTHONPATH=. .venv/bin/python scripts/seed_products.py
 
 # 4. Start backend server
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -202,6 +232,6 @@ npm run dev
 | [`docs/architecture.md`](docs/architecture.md) | System context, WhatsApp webhook lifecycle, AI agent loop, component layers |
 | [`docs/database.md`](docs/database.md) | Mermaid ERD, 7 tables with full column specs, all indexes, migrations |
 | [`docs/api-reference.md`](docs/api-reference.md) | All REST endpoints with request/response JSON examples |
-| [`docs/agent.md`](docs/agent.md) | "Sarah" persona, 8 tools with schemas, orchestrator flow, token budget |
+| [`docs/agent.md`](docs/agent.md) | Persona config, 7 stages, 9 tools, orchestrator flow, prompt assembly |
 | [`docs/setup.md`](docs/setup.md) | Prerequisites, step-by-step, env vars table, Alembic commands, CLI usage, troubleshooting |
 | [`docs/roadmap.md`](docs/roadmap.md) | All built features, prioritized pending items across frontend/backend/testing/infra |

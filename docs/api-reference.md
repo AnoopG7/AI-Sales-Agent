@@ -210,17 +210,17 @@ Paginated list of leads with optional filters.
   "data": [
     {
       "id": "550e8400-e29b-41d4-a716-446655440001",
-      "whatsapp_phone": "+971501234567",
-      "name": "Rahul Sharma",
-      "email": "rahul@example.com",
+      "whatsapp_phone": "+14155550132",
+      "name": "Jordan Lee",
+      "email": "jordan@example.com",
       "status": "new",
       "source": "meta_ads",
-      "conversation_stage": "information_gathering",
-      "budget_min": 1500000.00,
-      "budget_max": 2500000.00,
-      "property_type": "apartment",
-      "bedrooms_min": 2,
-      "location": "Dubai Marina",
+      "conversation_stage": "qualification",
+      "budget_min": 500.00,
+      "budget_max": 1500.00,
+      "company": "Brightline Logistics",
+      "team_size": 25,
+      "product_interest": "pipeline tracking and forecasting",
       "notes": null,
       "assigned_to": null,
       "extra_data": {},
@@ -246,17 +246,17 @@ Get a single lead with full details.
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440001",
-  "whatsapp_phone": "+971501234567",
-  "name": "Rahul Sharma",
-  "email": "rahul@example.com",
+  "whatsapp_phone": "+14155550132",
+  "name": "Jordan Lee",
+  "email": "jordan@example.com",
   "status": "new",
   "source": "meta_ads",
-  "conversation_stage": "information_gathering",
-  "budget_min": 1500000.00,
-  "budget_max": 2500000.00,
-  "property_type": "apartment",
-  "bedrooms_min": 2,
-  "location": "Dubai Marina",
+  "conversation_stage": "qualification",
+  "budget_min": 500.00,
+  "budget_max": 1500.00,
+  "company": "Brightline Logistics",
+  "team_size": 25,
+  "product_interest": "pipeline tracking and forecasting",
   "notes": null,
   "assigned_to": null,
   "extra_data": {},
@@ -275,16 +275,16 @@ Create a lead manually (from dashboard).
 **Request:**
 ```json
 {
-  "whatsapp_phone": "+971501234567",
-  "name": "Rahul Sharma",
-  "email": "rahul@example.com",
+  "whatsapp_phone": "+14155550132",
+  "name": "Jordan Lee",
+  "email": "jordan@example.com",
   "status": "new",
   "source": "manual",
-  "budget_min": 1500000.00,
-  "budget_max": 2500000.00,
-  "property_type": "apartment",
-  "bedrooms_min": 2,
-  "location": "Dubai Marina",
+  "budget_min": 500.00,
+  "budget_max": 1500.00,
+  "company": "Brightline Logistics",
+  "team_size": 25,
+  "product_interest": "pipeline tracking and forecasting",
   "notes": "Called from office"
 }
 ```
@@ -301,8 +301,8 @@ Update any subset of lead fields.
 ```json
 {
   "status": "qualified",
-  "notes": "Interested in Marina 2BR under 2.5M AED",
-  "budget_max": 2500000.00
+  "notes": "Wants forecasting; evaluating two other vendors",
+  "budget_max": 1500.00
 }
 ```
 
@@ -310,7 +310,7 @@ Update any subset of lead fields.
 ```json
 {
   "budget_max": null,
-  "location": null
+  "team_size": null
 }
 ```
 
@@ -336,14 +336,14 @@ Get message history for a lead.
   {
     "id": "660e8400-e29b-41d4-a716-446655440010",
     "role": "user",
-    "content": "Hi, I'm looking for a 2BR in Dubai Marina",
+    "content": "Hi, we're a 25-person sales team looking for a CRM",
     "message_type": "text",
     "created_at": "2026-05-10T10:00:00+00:00"
   },
   {
     "id": "660e8400-e29b-41d4-a716-446655440011",
     "role": "assistant",
-    "content": "Hello Rahul! Welcome to LeadGen Realty. I'd be happy to help you find a 2BR in Dubai Marina. Do you have a budget range in mind?",
+    "content": "Hi Jordan! I'm Ava from Acme Cloud 👋 Happy to help your team find the right CRM. What's the main thing you want it to solve, pipeline tracking, forecasting, or something else?",
     "message_type": "text",
     "created_at": "2026-05-10T10:00:05+00:00"
   }
@@ -357,7 +357,7 @@ Add an internal note to a lead.
 **Request:**
 ```json
 {
-  "content": "Called lead — interested in a site visit next week"
+  "content": "Called lead — wants a demo with their sales manager next week"
 }
 ```
 
@@ -371,11 +371,11 @@ Add an internal note to a lead.
 
 ---
 
-## Properties — `/api/v1/properties`
+## Products — `/api/v1/products`
 
-Auth required.
+Auth required. The catalog of plans and products the agent can recommend. Prices are in the catalog currency (`DEFAULT_CURRENCY`, USD by default).
 
-### `GET /properties`
+### `GET /products`
 
 Paginated list with search and filters.
 
@@ -385,13 +385,12 @@ Paginated list with search and filters.
 |-------|------|---------|-------------|
 | `page` | int | 1 | Page number |
 | `page_size` | int | 20 | Items per page (max 100) |
-| `type` | string | — | `apartment`, `villa`, `townhouse`, `penthouse`, `studio` |
-| `location` | string | — | Partial match on location |
-| `min_price` | number | — | Minimum price in AED |
-| `max_price` | number | — | Maximum price in AED |
-| `bedrooms` | int | — | Minimum bedrooms |
-| `status` | string | — | `available`, `sold`, `rented`, `under_offer`, `archived` |
-| `search` | string | — | Search title and description |
+| `category` | string | — | `crm`, `analytics`, `automation`, `support`, `add_on` |
+| `min_price` | number | — | Minimum price |
+| `max_price` | number | — | Maximum price |
+| `team_size` | int | — | Only plans whose seat range fits this many seats |
+| `status` | string | — | `active`, `beta`, `deprecated`, `archived` |
+| `search` | string | — | Search name, description and category |
 
 **Response `200 OK`:**
 ```json
@@ -399,81 +398,69 @@ Paginated list with search and filters.
   "data": [
     {
       "id": "770e8400-e29b-41d4-a716-446655440020",
-      "title": "2BR Luxury Apartment in Dubai Marina",
-      "description": "Stunning marina view with full amenities...",
-      "price": 2500000.00,
-      "property_type": "apartment",
-      "bedrooms": 2,
-      "bathrooms": 2,
-      "area_sqft": 1200.0,
-      "location": "Dubai Marina",
-      "latitude": 25.0799,
-      "longitude": 55.1403,
-      "amenities": ["pool", "gym", "parking", "concierge"],
-      "images": [
-        {"url": "https://...", "alt": "Living room", "order": 1},
-        {"url": "https://...", "alt": "Bedroom", "order": 2}
-      ],
+      "name": "CRM Growth",
+      "description": "Pipeline automation and forecasting for growing sales teams.",
+      "category": "crm",
+      "price": 39.00,
+      "billing_period": "monthly",
+      "min_seats": 5,
+      "max_seats": 100,
+      "features": ["custom pipelines", "sales forecasting", "workflow automation"],
       "featured": true,
-      "status": "available",
-      "extra_data": {"developer": "Emaar", "completion_year": 2024},
+      "status": "active",
+      "extra_data": {},
       "created_at": "2026-05-01T00:00:00+00:00",
       "updated_at": "2026-05-01T00:00:00+00:00"
     }
   ],
-  "total": 20,
+  "total": 11,
   "page": 1,
   "page_size": 20,
   "total_pages": 1
 }
 ```
 
-### `GET /properties/{property_id}`
+### `GET /products/{product_id}`
 
-Get a single property.
+Get a single product.
 
-**Response `200 OK`:** Full `PropertyResponse` object.
+**Response `200 OK`:** Full `ProductResponse` object.
 
 **Errors:** `404 Not Found`
 
-### `POST /properties`
+### `POST /products`
 
-Create a new property listing.
+Add a product to the catalog.
 
 **Request:**
 ```json
 {
-  "title": "2BR Luxury Apartment in Dubai Marina",
-  "description": "Stunning marina view with full amenities...",
-  "price": 2500000.00,
-  "property_type": "apartment",
-  "bedrooms": 2,
-  "bathrooms": 2,
-  "area_sqft": 1200.0,
-  "location": "Dubai Marina",
-  "latitude": 25.0799,
-  "longitude": 55.1403,
-  "amenities": ["pool", "gym", "parking"],
-  "images": [{"url": "https://...", "alt": "Living room", "order": 1}],
+  "name": "CRM Growth",
+  "description": "Pipeline automation and forecasting for growing sales teams.",
+  "category": "crm",
+  "price": 39.00,
+  "billing_period": "monthly",
+  "min_seats": 5,
+  "max_seats": 100,
+  "features": ["custom pipelines", "sales forecasting"],
   "featured": false,
-  "status": "available",
-  "extra_data": {}
+  "status": "active"
 }
 ```
 
-**Response `201 Created`:** Full `PropertyResponse` object.
+`billing_period` is `monthly`, `annual` or `one_time`. Omit `max_seats` for no upper limit.
 
-### `PUT /properties/{property_id}`
+**Response `201 Created`:** Full `ProductResponse` object.
 
-Full update of a property (all fields required).
+### `PUT /products/{product_id}`
 
-**Request:** Same schema as POST.
+Update a product. Only the fields you send are changed.
 
-**Response `200 OK`:** Updated `PropertyResponse`.
+**Response `200 OK`:** Updated `ProductResponse`.
 
 **Errors:** `404 Not Found`
 
-### `DELETE /properties/{property_id}`
+### `DELETE /products/{product_id}`
 
 Soft delete — sets status to `archived`.
 
@@ -481,9 +468,9 @@ Soft delete — sets status to `archived`.
 
 **Errors:** `404 Not Found`
 
-### `PATCH /properties/{property_id}/featured`
+### `PATCH /products/{product_id}/featured`
 
-Toggle featured status.
+Set or toggle featured status (omit `featured` to toggle).
 
 **Request:**
 ```json
@@ -492,14 +479,7 @@ Toggle featured status.
 }
 ```
 
-**Response `200 OK`:**
-```json
-{
-  "id": "770e8400-e29b-41d4-a716-446655440020",
-  "featured": true,
-  "message": "Featured status updated"
-}
-```
+**Response `200 OK`:** Updated `ProductResponse`.
 
 ---
 
@@ -528,11 +508,11 @@ Paginated list with optional status filter.
       "lead_id": "550e8400-e29b-41d4-a716-446655440001",
       "scheduled_at": "2026-05-15T10:00:00+04:00",
       "duration_minutes": 30,
-      "timezone": "Asia/Dubai",
+      "timezone": "UTC",
       "google_event_id": null,
       "meet_link": null,
       "status": "scheduled",
-      "notes": "Show 2BR in Dubai Marina",
+      "notes": "CRM Growth demo for Brightline sales team",
       "created_at": "2026-05-10T10:30:00+00:00",
       "updated_at": "2026-05-10T10:30:00+00:00"
     }
@@ -555,8 +535,8 @@ Get next 5 upcoming meetings (for dashboard widget).
     {
       "id": "880e8400-...",
       "lead_id": "550e8400-...",
-      "lead_name": "Rahul Sharma",
-      "lead_phone": "+971501234567",
+      "lead_name": "Jordan Lee",
+      "lead_phone": "+14155550132",
       "scheduled_at": "2026-05-15T10:00:00+04:00",
       "duration_minutes": 30,
       "status": "scheduled"
@@ -582,8 +562,8 @@ Schedule a new meeting.
   "lead_id": "550e8400-e29b-41d4-a716-446655440001",
   "scheduled_at": "2026-05-15T10:00:00",
   "duration_minutes": 30,
-  "timezone": "Asia/Dubai",
-  "notes": "Show 2BR in Dubai Marina"
+  "timezone": "UTC",
+  "notes": "CRM Growth demo for Brightline sales team"
 }
 ```
 
@@ -737,13 +717,13 @@ Inbound WhatsApp message handler.
             },
             "contacts": [
               {
-                "profile": {"name": "Rahul"},
-                "wa_id": "971501234567"
+                "profile": {"name": "Jordan"},
+                "wa_id": "14155550132"
               }
             ],
             "messages": [
               {
-                "from": "971501234567",
+                "from": "14155550132",
                 "id": "wamid.HBgN..."
               }
             ]

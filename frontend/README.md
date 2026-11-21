@@ -1,6 +1,6 @@
 # Frontend — Admin Dashboard
 
-React-based admin dashboard for managing leads, properties, meetings, and analytics. Connected to the backend API via Axios with auth token injection. Built with shadcn/ui components and a blue-themed OKLCH design system with light/dark mode. Currently in foundation phase — component library and design system are complete, pages are being built.
+React-based admin dashboard for the AI sales agent: manage leads, the product catalog, demo meetings and analytics. Connected to the backend API via Axios with auth token injection. Built with shadcn/ui components and a blue-themed OKLCH design system with light/dark mode. Currently in foundation phase — component library and design system are complete, pages are being built.
 
 ## Stack
 
@@ -31,7 +31,7 @@ React-based admin dashboard for managing leads, properties, meetings, and analyt
 
 - **Full light/dark theme** with OKLCH color space — blue primary (light: 221 83% 53%, dark: 217 91% 60%)
 - **Geist font** via @fontsource-variable/geist — modern, readable at all sizes
-- **Gold accent** for Dubai real estate branding (used sparingly for highlights)
+- **Gold accent** for featured plans (used sparingly for highlights)
 - **Custom CSS utilities**:
   - `.glass` — Frosted glass effect with backdrop-blur
   - `.glass-card` — Glassmorphism card with semi-transparent border
@@ -82,8 +82,8 @@ React-based admin dashboard for managing leads, properties, meetings, and analyt
 
 | Form | Fields | Validation |
 |------|--------|------------|
-| LeadForm | name, phone, email, status, source, budget_min, budget_max, property_type (select), bedrooms, location, notes | Zod: phone format, budget range, required name/phone |
-| PropertyForm | title, description, price, property_type (select), bedrooms, bathrooms, area_sqft, location, amenities (multi-select), status, featured toggle | Zod: required title/price/location, price > 0 |
+| LeadForm | name, phone, email, status, source, budget_min, budget_max, company, team_size, product_interest, notes | Zod: phone format, team size >= 1, required name/phone |
+| ProductForm | name, description, category (select), price, billing period, min/max seats, features (multi-select), status, featured toggle | Zod: required name/category, price >= 0, max seats >= min seats |
 | MeetingForm | lead_id (searchable), scheduled_at (date picker), duration_minutes, timezone, notes | Zod: required lead_id + datetime, duration >= 15 |
 | LoginForm | email, password | Zod: email format, password min 8 chars |
 | SettingsForm | app_name, theme, timezone, currency, language | Zod: required name |
@@ -103,7 +103,7 @@ All forms use React Hook Form with Zod resolvers for real-time validation. Loadi
 | SearchInput | value, onChange, placeholder, debounceMs (default 300) | Debounced search input with clear button. Default 300ms debounce. |
 | Pagination | page, totalPages, onPageChange | Previous/next buttons + page numbers. Ellipsis for large page counts. |
 | StatCard | label, value, icon, trend, trendValue, variant | Dashboard metric card with trend indicator. Hover lift animation. Variants: default/success/warning/danger. |
-| StatusBadge | status, type (lead/property/meeting) | Color-coded badge matching entity status. Consistent color mapping across the app. |
+| StatusBadge | status, type (lead/product/meeting) | Color-coded badge matching entity status. Consistent color mapping across the app. |
 
 ### Color Mapping
 
@@ -116,11 +116,10 @@ All forms use React Hook Form with Zod resolvers for real-time validation. Loadi
 - lost: red
 - spam: gray
 
-**Property Status Badges:**
-- available: green
-- sold: red
-- rented: blue
-- under_offer: orange
+**Product Status Badges:**
+- active: green
+- beta: blue
+- deprecated: yellow
 - archived: gray
 
 **Meeting Status Badges:**
@@ -135,7 +134,7 @@ All forms use React Hook Form with Zod resolvers for real-time validation. Loadi
 | Store | State | Actions |
 |-------|-------|---------|
 | authStore | user, token, isAuthenticated, isLoading | setAuth(user, token), logout(), hydrate() |
-| filterStore | statusFilter, sourceFilter, searchQuery, dateRange (leads); typeFilter, priceRange, bedroomsFilter, locationFilter, searchQuery (properties) | setLeadFilter, setPropertyFilter, resetFilters |
+| filterStore | statusFilter, sourceFilter, searchQuery, dateRange (leads); categoryFilter, priceRange, teamSizeFilter, statusFilter, searchQuery (products) | setLeadFilter, setProductFilter, resetFilters |
 | sidebarStore | isCollapsed (desktop), isMobileOpen | toggleCollapse, setMobileOpen, setCollapsed |
 
 ### API Client (Axios)
@@ -171,7 +170,7 @@ const queryClient = new QueryClient({
 
 ```typescript
 // Core entity interfaces
-Lead, Property, PropertyImage, Conversation, Message, Meeting, AdminUser
+Lead, Product, Conversation, Message, Meeting, AdminUser
 
 // Analytics
 AnalyticsOverview, LeadOverTime, StatusBreakdown, SourceBreakdown
@@ -184,8 +183,8 @@ PaginatedResponse<T>, ApiError
 
 | Schema | Fields | Validations |
 |--------|--------|-------------|
-| leadFormSchema | name, phone, email, status, source, budget_min, budget_max, property_type, bedrooms, location, notes | phone: regex, budget: min/max coherence, required: name, phone |
-| propertyFormSchema | title, description, price, property_type, bedrooms, bathrooms, area_sqft, location, amenities[], status, featured | required: title, price, location; price > 0 |
+| leadFormSchema | name, phone, email, status, source, budget_min, budget_max, company, team_size, product_interest, notes | phone: regex, budget: min/max coherence, required: name, phone |
+| productFormSchema | name, description, category, price, billing_period, min_seats, max_seats, features[], status, featured | required: name, category; price >= 0; max_seats >= min_seats |
 | meetingFormSchema | lead_id, scheduled_at, duration_minutes, timezone, notes | required: lead_id, scheduled_at; duration >= 15 |
 | loginSchema | email, password | email format, password min 8 |
 | signupSchema | name, email, password, confirm_password | password match, min 8 |
@@ -197,21 +196,20 @@ PaginatedResponse<T>, ApiError
 // Entity statuses and sources
 LEAD_STATUSES: string[]
 LEAD_SOURCES: string[]
-PROPERTY_TYPES: string[]
-PROPERTY_STATUSES: string[]
+PRODUCT_CATEGORIES: string[]
+PRODUCT_STATUSES: string[]
+BILLING_PERIODS: string[]
 MEETING_STATUSES: string[]
 
-// Dubai areas (20 areas)
-DUBAI_AREAS: string[]
-// Dubai Marina, Downtown Dubai, Palm Jumeirah, Jumeirah Village Circle (JVC),
-// Business Bay, Dubai Hills Estate, Arabian Ranches, Emirates Hills,
-// Jumeirah Lakes Towers (JLT), Barsha Heights, City Walk, The Greens,
-// Al Furjan, Dubai Silicon Oasis, Motor City, Damac Hills,
-// Dubai South, Al Barari, Port de La Mer, Bluewaters
+// Catalog currency (matches backend DEFAULT_CURRENCY)
+DEFAULT_CURRENCY: string
+
+// Team-size bands for filtering
+TEAM_SIZE_BANDS: { label, min, max }[]
 
 // Navigation items (7 items)
 NAV_ITEMS: { icon, label, path, badge? }[]
-// Dashboard, Leads, Properties, Meetings, Analytics, Settings
+// Dashboard, Leads, Products, Conversations, Meetings, Analytics, Settings
 ```
 
 ## Setup
@@ -269,9 +267,9 @@ server: {
 | / | Dashboard | StatCard (done), Recharts, DataTable (done) |
 | /leads | Lead list | DataTable (done), SearchInput (done), StatusBadge (done), PageHeader (done) |
 | /leads/:id | Lead detail | Conversation log, activity timeline, edit sheet |
-| /properties | Property grid/list | DataTable (done), SearchInput (done), PropertyForm (done) |
-| /properties/new | Create property | PropertyForm (done) |
-| /properties/:id | Property detail | Image gallery, full details, matched leads |
+| /products | Product catalog | DataTable (done), SearchInput (done), ProductForm (done) |
+| /products/new | Create product | ProductForm (done) |
+| /products/:id | Product detail | Full details, matching leads by team size and budget |
 | /meetings | Calendar + list | MeetingForm (done), react-day-picker, list view |
 | /analytics | Charts + date range | Recharts, StatCard (done) |
 | /settings | Configuration | SettingsForm (done), tabs, integration configs |

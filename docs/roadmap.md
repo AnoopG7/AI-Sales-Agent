@@ -7,9 +7,9 @@
 - Docker Compose for PostgreSQL 16 Alpine on port 5432 with persistent volume
 - SQLAlchemy 2.0 async ORM — 7 models using Mapped style with ForeignKey relationships and cascade rules
 - Alembic migrations — 2 applied (initial schema creating all 7 tables, fix_last_contacted_at_timezone)
-- 20 Dubai properties seeded across 5 types, 10+ locations, price range 550K–25M AED
-- 9 StrEnum definitions for status/types/stages/roles used across ORM and Pydantic layers
-- Indexes on all frequently queried columns (phone, status, type, location, price, created_at)
+- Sample B2B SaaS catalog seeded: 11 products across 5 categories with monthly, annual and one-time pricing
+- 10 StrEnum definitions for status/categories/billing/stages/roles used across ORM and Pydantic layers
+- Index on lead WhatsApp phone for webhook lookups
 
 ### Backend (FastAPI + Python 3.12)
 
@@ -42,11 +42,11 @@
 - Conversation history for a lead (chronological message list)
 - Add internal note
 
-**Property Management (6 endpoints):**
-- Paginated list with filters (type, location, price range, bedrooms, status, text search)
-- Single property by ID
-- Create property
-- Full update (PUT)
+**Product Catalog (6 endpoints):**
+- Paginated list with filters (category, price range, team size / seat fit, status, text search)
+- Single product by ID
+- Create product
+- Update (PUT, partial)
 - Soft delete (sets status to archived)
 - Toggle featured status
 
@@ -68,12 +68,12 @@
 - GET webhook — Meta verification handshake (hub.mode, hub.verify_token, hub.challenge)
 - POST webhook — Full message processing pipeline with signature verification, dedup, lead auto-creation, AI agent, reply sending
 
-### AI Agent (Sarah)
+### AI Sales Agent
 
 **Agent Architecture:**
 - Raw Groq function calling with full orchestrator control (no LangChain/LangGraph)
 - 7 conversation stages with stage-specific behavior instructions
-- 8 tools with JSON Schema definitions and async handlers
+- 9 tools with JSON Schema definitions and async handlers
 - MAX_TOOL_ROUNDS = 10 with contextual fallback after exhaustion
 - MAX_HISTORY_MESSAGES = 10 for context management (keeps token usage within free tier limits)
 - Groq 429 retry: 3 attempts with exponential backoff (1s, 3s) before fallback
@@ -84,27 +84,26 @@
 - Token usage logging (prompt_tokens + completion_tokens per call)
 
 **Agent Persona:**
-- "Sarah" — warm, professional Dubai real estate consultant
-- Indian buyer/NRI focus with cultural context understanding
-- Hinglish language support
-- AED + INR dual pricing display (lakh/crore notation)
-- Dubai market knowledge (neighborhoods, pricing, legal, visa info)
+- Configurable name, company and catalog currency via env vars (`AGENT_NAME`, `COMPANY_NAME`, `DEFAULT_CURRENCY`)
+- Warm, concise account-executive tone suited to WhatsApp
+- Qualifies on company, team size, use case, budget and timeline
 
 **Agent Tools:**
-- `search_properties` — filter by type, location, price, bedrooms (limit 5)
-- `list_all_properties` — show everything available (no filters)
-- `get_property_details` — full details by property ID
-- `update_lead_info` — save learned preferences (all optional, null to clear)
-- `update_lead_stage` — advance through 7-stage pipeline
-- `schedule_meeting` — book site visit with ISO datetime
-- `send_email` — send property info via SMTP
-- `transfer_to_human` — escalate to team member
+- `search_products` — filter by category, keyword, price and team size (limit 5)
+- `list_all_products` — show the full active catalog
+- `get_product_details` — full details by product ID
+- `convert_currency` — live rates with offline fallback
+- `update_lead_info` — save what was learned (all optional, null to clear)
+- `update_lead_stage` — advance through the 7-stage pipeline
+- `schedule_meeting` — book a demo call with ISO datetime
+- `send_email` — send a plan summary or meeting details via SMTP
+- `transfer_to_human` — hand off to a sales rep
 
 **Prompt Engineering:**
 - Condensed system prompt (~800 tokens)
 - Dynamic lead profile context built fresh from DB each call, rebuilt mid-call after tool modifications
 - Stage-specific instructions guiding behavior per stage
-- Guardrails: no hallucinated pricing, no personal contact sharing, no legal advice, Indian numbering rules, typo correction, no-results alternatives
+- Guardrails: no invented pricing or features, no discounts without a human, no staff contact sharing, ask for currency when missing, no-results alternatives
 
 **Agent CLI (WhatsApp Simulator):**
 - `list`, `select`, `new`, `say`, `history`, `state`, `help`, `quit`
@@ -143,7 +142,7 @@
 - Geist variable font via @fontsource
 - Full light/dark/system theme via next-themes with localStorage persistence
 - Custom CSS utilities (glass, glass-card, text-gradient, shimmer, scrollbar-thin)
-- Gold accent for Dubai branding
+- Gold accent for featured plans
 
 **Layout Shell:**
 - AppShell with responsive sidebar (desktop) / sheet nav (mobile)
@@ -153,7 +152,7 @@
 
 **State Management:**
 - authStore (Zustand): user, token, isAuthenticated, isLoading, setAuth, logout, hydrate
-- filterStore (Zustand): lead + property filter state with set/reset actions
+- filterStore (Zustand): lead + product filter state with set/reset actions
 - sidebarStore (Zustand): isCollapsed, isMobileOpen, toggle actions
 
 **API Layer:**
@@ -164,7 +163,7 @@
 
 **Forms (React Hook Form + Zod):**
 - LeadForm: all lead fields with phone/budget validation
-- PropertyForm: all property fields with price/title validation
+- ProductForm: catalog fields with price and seat-range validation
 - MeetingForm: lead selector, date picker, duration
 - LoginForm: email + password with format validation
 - SettingsForm: app configuration fields
@@ -179,12 +178,12 @@
 - SearchInput: debounced search (300ms) with clear button
 - Pagination: page controls with ellipsis
 - StatCard: metric card with trend indicator and hover lift
-- StatusBadge: color-coded badges for lead/property/meeting statuses
+- StatusBadge: color-coded badges for lead/product/meeting statuses
 
 **Types & Schemas:**
-- TypeScript interfaces: Lead, Property, PropertyImage, Conversation, Message, Meeting, AdminUser, AnalyticsOverview, PaginatedResponse, ApiError
-- Zod schemas: leadFormSchema, propertyFormSchema, meetingFormSchema, loginSchema, signupSchema, settingsSchema
-- Constants: LEAD_STATUSES, LEAD_SOURCES, PROPERTY_TYPES, PROPERTY_STATUSES, MEETING_STATUSES, DUBAI_AREAS (20 areas), NAV_ITEMS (7 items)
+- TypeScript interfaces: Lead, Product, Conversation, Message, Meeting, AdminUser, AnalyticsOverview, PaginatedResponse, ApiError
+- Zod schemas: leadFormSchema, productFormSchema, meetingFormSchema, loginSchema, signupSchema, settingsSchema
+- Constants: LEAD_STATUSES, LEAD_SOURCES, PRODUCT_CATEGORIES, PRODUCT_STATUSES, BILLING_PERIODS, MEETING_STATUSES, TEAM_SIZE_BANDS, NAV_ITEMS (7 items)
 
 ## What's Next
 
@@ -196,9 +195,9 @@
 | Dashboard | Components done | StatCards + Recharts (line chart for leads, donut for sources) + DataTable for recent leads |
 | Lead list | Components done | DataTable + SearchInput + StatusBadge + filterStore |
 | Lead detail | Requires new components | Conversation log (chat bubbles), activity timeline, status history, edit sheet |
-| Property grid/list | Components done | DataTable/PropertyCard + SearchInput + filterStore |
-| Property create/edit | Form done | PropertyForm wired to API |
-| Property detail | Requires new components | Image gallery, full details, matched leads |
+| Product catalog list | Components done | DataTable + SearchInput + filterStore |
+| Product create/edit | Form done | ProductForm wired to API |
+| Product detail | Requires new components | Full details, matching leads by team size and budget |
 | Meeting calendar | Components done | react-day-picker calendar + list toggle + status filters |
 | Analytics | Components done | Recharts + StatCard + date range picker |
 | Settings | Form done | Tabs for general/WhatsApp/AI/Notifications/Team |
@@ -208,15 +207,15 @@
 | Item | Description |
 |------|-------------|
 | Context window tracking | Monitor prompt_tokens and auto-truncate history if approaching limit |
-| No-results handler | Move into search_properties tool: suggest alternatives and nearby areas |
+| No-results handler | Move into search_products tool: suggest the closest plans when filters return nothing |
 
 ### Testing
 
 | Item | Description |
 |------|-------------|
-| conftest fixtures | AsyncTestClient, mock Groq, sample leads/properties/webhook payloads |
-| Agent tests | Greeting, info extraction, property search, meeting scheduling, out-of-scope, guardrails |
-| API endpoint tests | Auth, leads CRUD, properties CRUD, meetings, analytics |
+| conftest fixtures | AsyncTestClient, mock Groq, sample leads/products/webhook payloads |
+| Agent tests | Greeting, qualification, product search, demo scheduling, out-of-scope, guardrails |
+| API endpoint tests | Auth, leads CRUD, products CRUD, meetings, analytics |
 | Webhook tests | Verification, inbound processing, signature check, dedup |
 | Frontend unit tests | Zustand stores, Zod schemas, utility functions |
 | Frontend component tests | Form validation, DataTable rendering, StatusBadge colors |

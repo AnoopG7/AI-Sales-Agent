@@ -30,7 +30,7 @@
 |  |                        |  |                                |  |
 |  | 1. Verify signature    |  | process_message() loop:       |  |
 |  | 2. Parse payload       |  |   - Groq function calling     |  |
-|  | 3. Dedup message ID    |  |   - 8 tools                   |  |
+|  | 3. Dedup message ID    |  |   - 9 tools                   |  |
 |  | 4. Get/create lead     |  |   - Max 10 rounds             |  |
 |  | 5. Store user msg      |  |   - Parallel execution        |  |
 |  | 6. Call process_msg()  |  |   - Token tracking            |  |
@@ -39,9 +39,10 @@
 |  +------------------------+  +--------------------------------+  |
 |                               |     TOOL EXECUTORS             |  |
 |                               |                                |  |
-|                               | search_properties() --+        |  |
-|                               | list_all_properties() --+      |  |
-|                               | get_property_details() --+     |  |
+|                               | search_products() -------+     |  |
+|                               | list_all_products() -----+     |  |
+|                               | get_product_details() ---+     |  |
+|                               | convert_currency() ------+     |  |
 |                               | update_lead_info() ------+     |  |
 |                               | update_lead_stage() -----+     |  |
 |                               | schedule_meeting() ------+     |  |
@@ -52,7 +53,7 @@
 |  +------------------------+  +--------------------------------+  |
 |  |       API LAYER        |  |      SERVICE LAYER             |  |
 |  |  6 route groups        |  |  5 services                    |  |
-|  |  Auth, Leads, Props,   |  |  Lead, Property, Meeting,      |  |
+|  |  Auth, Leads, Products, |  |  Lead, Product, Meeting,       |  |
 |  |  Meetings, Analytics,  |  |  Auth, Analytics               |  |
 |  |  WhatsApp              |  +--------------------------------+  |
 |  +------------------------+                                     |
@@ -71,10 +72,10 @@
 |                                                                   |
 |  Tables:                                                         |
 |  +------------+  +------------+  +-------------------+           |
-|  | admin_users|  |   leads    |  |   properties      |           |
+|  | admin_users|  |   leads    |  |   products        |           |
 |  +------------+  +------------+  +-------------------+           |
-|  | 7 columns   |  | 19 columns |  | 16 columns        |          |
-|  | UNIQUE email |  | INDEX phone|  | INDEX price/type  |          |
+|  | 7 columns   |  | 19 columns |  | 14 columns        |          |
+|  | UNIQUE email |  | INDEX phone|  | seat range        |          |
 |  +------------+  +------------+  +-------------------+           |
 |                                                                   |
 |  +------------+  +-----------+  +--------------+  +-----------+  |
@@ -94,7 +95,7 @@
 |  |                                                             |  |
 |  |  Router (React Router v7):                                  |  |
 |  |    AuthLayout: /login                                       |  |
-|  |    DashboardLayout: /, /leads, /properties, /meetings,      |  |
+|  |    DashboardLayout: /, /leads, /products, /meetings,        |  |
 |  |                    /analytics, /settings                     |  |
 |  |                                                             |  |
 |  |  AppShell: Sidebar + Header + Main                          |  |
@@ -212,10 +213,10 @@ Groq returns tool_calls in assistant response
           "tool_calls": [
               {"id": "call_1", "type": "function",
                "function": {"name": "update_lead_info",
-                            "arguments": '{"name": "Rahul", "budget_max": 3000000}'}},
+                            "arguments": '{"company": "Brightline", "team_size": 25}'}},
               {"id": "call_2", "type": "function",
                "function": {"name": "update_lead_stage",
-                            "arguments": '{"stage": "property_search"}'}},
+                            "arguments": '{"stage": "discovery"}'}},
           ]
       })
       |
@@ -225,12 +226,12 @@ Execute EACH tool call sequentially:
       +---> [tools.py] execute_tool("update_lead_info", args, lead_id, session)
       |       +---> LeadService.update_lead(lead_id, LeadUpdate(**args))
       |       +---> LeadRepository.update(id, update_data)
-      |       +---> Return: "Updated: name, budget_max"
+      |       +---> Return: "Updated: company, team_size"
       |       +---> messages.append({"role": "tool", "tool_call_id": "call_1", "content": result})
       |
       +---> [tools.py] execute_tool("update_lead_stage", args, lead_id, session)
-      |       +---> LeadService.update_lead(lead_id, LeadUpdate(conversation_stage="property_search"))
-      |       +---> Return: "Stage updated to: property_search"
+      |       +---> LeadService.update_lead(lead_id, LeadUpdate(conversation_stage="discovery"))
+      |       +---> Return: "Stage updated to: discovery"
       |       +---> messages.append({"role": "tool", "tool_call_id": "call_2", "content": result})
       |
       v
@@ -266,10 +267,10 @@ main.py
   |     |           +-- repositories/lead_repo.py
   |     |           +-- models/lead.py
   |     |
-  |     +-- api/v1/endpoints/properties.py
-  |     |     +-- services/property_service.py
-  |     |           +-- repositories/property_repo.py
-  |     |           +-- models/property.py
+  |     +-- api/v1/endpoints/products.py
+  |     |     +-- services/product_service.py
+  |     |           +-- repositories/product_repo.py
+  |     |           +-- models/product.py
   |     |
   |     +-- api/v1/endpoints/meetings.py
   |     |     +-- services/meeting_service.py
@@ -289,7 +290,7 @@ main.py
   |                 +-- agent/prompts.py
   |                 +-- agent/tools.py
   |                 |     +-- services/lead_service.py
-  |                 |     +-- services/property_service.py
+  |                 |     +-- services/product_service.py
   |                 |     +-- services/meeting_service.py
   |                 |     +-- integrations/email.py
   |                 +-- integrations/llm_client.py

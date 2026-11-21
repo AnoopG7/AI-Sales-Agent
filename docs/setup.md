@@ -125,7 +125,7 @@ INFO  [alembic.runtime.migration] Running upgrade 5ed85bcb3b71 -> 7740dccae86c, 
 **Verify:**
 ```bash
 docker compose exec db psql -U postgres -d leadgen -c "\dt"
-# Should show 7 tables: admin_users, conversations, leads, meetings, notifications, properties, settings
+# Should show 7 tables: admin_users, conversations, leads, meetings, notifications, products, settings
 
 docker compose exec db psql -U postgres -d leadgen -c "\di"
 # Should show all indexes
@@ -136,36 +136,32 @@ docker compose exec db psql -U postgres -d leadgen -c "\di"
 - `ModuleNotFoundError: No module named 'app'`: You forgot `PYTHONPATH=.`
 - Can't connect to database: Check PostgreSQL is running (`docker ps | grep leadgen-db`)
 
-### Step 5: Seed Property Data
+### Step 5: Seed the Product Catalog
 
 ```bash
 # Still in backend/
-PYTHONPATH=. .venv/bin/python scripts/seed_properties.py
+PYTHONPATH=. .venv/bin/python scripts/seed_products.py
 ```
 
 **What this does:**
 - Connects to PostgreSQL using the same database URL
-- Checks if properties already exist (skips if any found)
-- Inserts 20 realistic Dubai properties across:
-  - 5 property types: apartment, villa, townhouse, penthouse, studio
-  - 10+ locations: Dubai Marina, Downtown, Palm Jumeirah, JVC, Business Bay, etc.
-  - Price range: AED 550,000 to AED 25,000,000
-  - Varies bedrooms (0/studio to 6BR), amenities, and square footage
+- Checks if products already exist (skips if any found)
+- Inserts a sample B2B SaaS catalog of 11 products across 5 categories (CRM, analytics, automation, support, add-ons), with monthly, annual and one-time pricing and different seat ranges, so the agent has something to recommend. Replace it with your own catalog.
 
 **Expected output:**
 ```
-Seeded 20 properties.
+✅ 11 products inserted successfully.
 ```
 
 Or if already seeded:
 ```
-Properties already seeded. Skipping.
+Products already seeded. Skipping.
 ```
 
 **Verify:**
 ```bash
-docker compose exec db psql -U postgres -d leadgen -c "SELECT COUNT(*) FROM properties;"
-# Should return: 20
+docker compose exec db psql -U postgres -d leadgen -c "SELECT COUNT(*) FROM products;"
+# Should return: 11
 ```
 
 ### Step 6: Start Backend Server
@@ -233,7 +229,7 @@ VITE v8.x.x  ready in 150ms
 **Verify:**
 - Open http://localhost:5173 in a browser
 - You should see the homepage with all components rendered (showcase page)
-- API proxy should work: the page makes requests to `/api/v1/properties` which Vite proxies to `localhost:8000`
+- API proxy should work: the page makes requests to `/api/v1/products` which Vite proxies to `localhost:8000`
 
 ### Step 8: Create an Admin User
 
@@ -264,8 +260,8 @@ Save the `access_token` from the response — you'll need it to test authenticat
 # Set your token
 TOKEN="eyJhbGciOiJIUzI1NiIs..."
 
-# List properties (should show 20 seeded properties)
-curl http://localhost:8000/api/v1/properties \
+# List products (should show the 11 seeded products)
+curl http://localhost:8000/api/v1/products \
   -H "Authorization: Bearer $TOKEN"
 
 # List leads (should be empty initially)
@@ -297,6 +293,14 @@ curl http://localhost:8000/api/v1/analytics/overview \
 |----------|----------|---------|-------------|
 | `DATABASE_URL` | No | `postgresql+asyncpg://postgres:postgres@localhost:5432/leadgen` | PostgreSQL connection string with async driver. Format: `postgresql+asyncpg://user:pass@host:port/dbname` |
 
+#### Business
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `COMPANY_NAME` | No | `Acme Cloud` | Company the agent represents |
+| `AGENT_NAME` | No | `Ava` | Name the agent introduces itself with |
+| `DEFAULT_CURRENCY` | No | `USD` | Currency the product catalog is priced in |
+
 #### Groq (AI)
 
 | Variable | Required | Default | Description |
@@ -320,7 +324,7 @@ curl http://localhost:8000/api/v1/analytics/overview \
 |----------|----------|---------|-------------|
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | No | `""` | Base64-encoded Google service account JSON key. Leave empty for dev (Calendar is stubbed) |
 | `GOOGLE_CALENDAR_ID` | No | `primary` | Calendar ID to create events in. Usually `primary` for the service account's calendar |
-| `GOOGLE_CALENDAR_TIMEZONE` | No | `Asia/Dubai` | Default timezone for calendar events |
+| `GOOGLE_CALENDAR_TIMEZONE` | No | `UTC` | Default timezone for calendar events |
 
 #### Email (SMTP)
 
@@ -337,7 +341,7 @@ curl http://localhost:8000/api/v1/analytics/overview \
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `ADMIN_EMAIL` | No | `""` | Admin email for notifications |
-| `ADMIN_WHATSAPP_NUMBER` | No | `""` | Admin WhatsApp number for alerts (format: 971XXXXXXXXX) |
+| `ADMIN_WHATSAPP_NUMBER` | No | `""` | Admin WhatsApp number for alerts (digits only, with country code, e.g. 14155550132) |
 
 ### Frontend (.env)
 

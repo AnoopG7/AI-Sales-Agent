@@ -1,6 +1,6 @@
-# Backend — LeadGen API
+# Backend — AI Sales Agent API
 
-FastAPI backend for the LeadGen lead generation platform. Manages WhatsApp conversations via an AI agent that qualifies leads, searches properties, schedules meetings, and sends email notifications — all through natural conversation. Built for Indian buyers and NRIs investing in Dubai real estate.
+FastAPI backend for the AI sales agent. It handles inbound WhatsApp conversations with an AI agent that qualifies leads, recommends plans from the product catalog, books demo calls and sends follow-up emails, and exposes a REST API for the admin dashboard.
 
 ## Stack
 
@@ -26,15 +26,16 @@ FastAPI backend for the LeadGen lead generation platform. Manages WhatsApp conve
 
 ## Features
 
-### WhatsApp AI Agent (Sarah)
+### WhatsApp AI Sales Agent
 
-- **Natural conversation**: Sarah greets leads, understands Hinglish, asks about preferences conversationally
-- **7-stage pipeline**: greeting -> information_gathering -> property_search -> property_presentation -> scheduling -> follow_up -> closed
-- **8 tools**: search_properties, list_all_properties, get_property_details, update_lead_info, update_lead_stage, schedule_meeting, send_email, transfer_to_human
-- **Parallel tool execution**: Multiple tool calls in one response are executed in parallel
+- **Configurable persona**: `AGENT_NAME`, `COMPANY_NAME` and `DEFAULT_CURRENCY` set who the agent is and what it sells
+- **Conversational qualification**: company, team size, use case, budget and timeline, asked one at a time
+- **7-stage pipeline**: greeting -> qualification -> discovery -> proposal -> demo_scheduling -> follow_up -> closed
+- **9 tools**: search_products, list_all_products, get_product_details, convert_currency, update_lead_info, update_lead_stage, schedule_meeting, send_email, transfer_to_human
+- **Multiple tool calls per turn**: all calls from one model response are executed in order and returned in the format OpenAI-compatible APIs expect
 - **10 max tool rounds**: Gives room for search, present, update, re-search, schedule without hitting the wall
 - **10 message history**: Balances context with token cost. Fewer than 40 to reduce Groq token consumption and stay within free tier limits.
-- **Dual currency display**: AED + INR with lakh/crore notation for Indian buyers
+- **Currency conversion**: budgets quoted in other currencies are converted to the catalog currency before searching
 - **Smart fallback**: Contextual message after exhausting tool rounds
 - **Groq function calling**: Raw implementation (no LangChain/LangGraph), full control over loop
 - **Token budget tracking**: Every call logs prompt_tokens + completion_tokens for daily limit monitoring
@@ -45,7 +46,7 @@ FastAPI backend for the LeadGen lead generation platform. Manages WhatsApp conve
 |--------|-----------|----------|
 | **Auth** | 8 endpoints | Signup, login, me, refresh, logout, change password, reset password request + confirm |
 | **Leads** | 7 endpoints | Paginated list with filters (status, source, search), CRUD, conversation history, internal notes |
-| **Properties** | 6 endpoints | Paginated list with search/filters (type, location, price range, bedrooms, status), CRUD, featured toggle |
+| **Products** | 6 endpoints | Paginated catalog with search/filters (category, price range, team size, status), CRUD, featured toggle |
 | **Meetings** | 6 endpoints | Paginated list, upcoming, CRUD schedule/cancel |
 | **Analytics** | 4 endpoints | Overview stats, leads over time, status breakdown, source breakdown |
 | **WhatsApp** | 2 endpoints | GET verification handshake + POST inbound message processor |
@@ -63,13 +64,14 @@ See [`docs/architecture.md`](../docs/architecture.md#flow-1-whatsapp-message-pro
 - Status pipeline: new -> contacted -> qualified -> meeting_scheduled -> converted -> lost -> spam
 - Source tracking: meta_ads, manual, referral, website, other
 
-### Property Management
+### Product Catalog
 
-- 20 seeded Dubai properties across all types and price ranges (550K AED to 25M AED)
-- Search with filters: type, location, price range, bedrooms, status
-- Featured toggle for priority listings
+- Sample B2B SaaS catalog seeded by `scripts/seed_products.py` (11 products, 5 categories)
+- Search with filters: category, keyword, price range, team size, status
+- Seat-range matching: a plan fits a team when `min_seats <= team_size <= max_seats` (no cap if `max_seats` is null)
+- Monthly, annual and one-time billing
+- Featured toggle for plans the agent should lead with
 - Soft delete (archive instead of hard delete)
-- Images stored as JSON array (URL, alt text, order)
 
 ### Meeting Scheduling
 
@@ -77,7 +79,7 @@ See [`docs/architecture.md`](../docs/architecture.md#flow-1-whatsapp-message-pro
 - ISO 8601 datetime parsing in meeting service
 - Upcoming meetings widget (next 5)
 - Status tracking: scheduled, confirmed, completed, cancelled, no_show
-- Timezone support (default: Asia/Dubai)
+- Timezone support (default: UTC)
 - Google Calendar stub (placeholder for real integration)
 
 ### Analytics Dashboard
@@ -103,8 +105,8 @@ Every layer logs with structured context:
 | Layer | Context | Example |
 |-------|---------|---------|
 | HTTP request | method, path, status, duration_ms | api_request method=POST path=/api/v1/whatsapp/webhook status=200 duration_ms=450 |
-| Repository | operation, lead_id, filters | lead_repo.find_by_phone phone=+971501234567 found=true |
-| Tool execution | tool name, lead_id, args | tool_search_properties lead_id=abc-123 filters={location: "Marina"} |
+| Repository | operation, lead_id, filters | lead_repo.find_by_phone phone=14155550132 found=true |
+| Tool execution | tool name, lead_id, args | tool_executing tool=search_products lead_id=abc-123 args={category: "crm", team_size: 25} |
 | LLM API | provider, model, tokens, tool_calls, finish_reason | llm_completion provider=groq model=llama... prompt_tokens=3100 completion_tokens=200 tool_calls=2 |
 | Agent round | round number, tool count, has_content | agent_round round=2 tool_count=1 has_content=false |
 
@@ -123,7 +125,7 @@ Every layer logs with structured context:
 |--------|---------------|---------|
 | /auth | No (except /me) | User registration, login, password management |
 | /leads | JWT | Lead CRUD, conversation history, notes |
-| /properties | JWT | Property CRUD, search, featured |
+| /products | JWT | Product catalog CRUD, search, featured |
 | /meetings | JWT | Meeting CRUD, upcoming |
 | /analytics | JWT | Dashboard statistics |
 | /whatsapp | No (signature-based) | Webhook verification + message processing |
@@ -136,7 +138,7 @@ Full setup guide at [`docs/setup.md`](../docs/setup.md). Quick reference:
 docker compose up -d        # Start PostgreSQL
 uv sync                      # Install dependencies
 PYTHONPATH=. .venv/bin/python -m alembic upgrade head   # Migrations
-PYTHONPATH=. .venv/bin/python scripts/seed_properties.py # Seed 20 properties
+PYTHONPATH=. .venv/bin/python scripts/seed_products.py   # Seed sample catalog
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000  # Start
 ```
 
@@ -153,6 +155,7 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000  # Start
 - `WHATSAPP_APP_SECRET` — set to "" to skip signature verification
 - `SMTP_HOST/USER/PASS` — leave empty to log emails to console
 - `GOOGLE_SERVICE_ACCOUNT_JSON` — leave empty (Calendar is stubbed)
+- `COMPANY_NAME`, `AGENT_NAME`, `DEFAULT_CURRENCY` — agent persona and catalog currency (defaults: Acme Cloud, Ava, USD)
 
 ### Lint and Type Check
 
@@ -175,16 +178,16 @@ Each say command: stores user message -> calls process_message() -> stores assis
 
 | Decision | Rationale |
 |----------|-----------|
-| No LangChain/LangGraph | Raw function calling is simpler, fewer deps, full control over loop and error handling. Orchestrator is ~200 lines. |
+| No LangChain/LangGraph | Raw function calling is simpler, fewer deps, full control over loop and error handling. Orchestrator is under 300 lines. |
 | SQLAlchemy async over supabase-py | Full control over database, TCP faster than HTTP/REST, proper Alembic migrations, single Docker container instead of 4. |
 | PostgreSQL 16 via Docker | Matches production stack, simple configuration, easy reset/backup. |
 | structlog for logging | Machine-parseable JSON in production, colorized in dev. Every layer logs with context. |
 | 10 MAX_TOOL_ROUNDS | Room for search -> present -> update -> re-search -> schedule -> email without hitting wall. |
 | 10 message history | ~400 tokens for history. Combined with system prompt + tools, stays under 2K tokens. ~50 conversations/day on Groq free tier. |
 | Groq over OpenAI | Free 100K TPD vs paid. OpenAI-compatible API = zero migration cost. ~200ms vs ~1s response time. |
-| Single Sarah persona | Simpler to build/test/maintain than multi-agent. Stage-based prompting gives specialized behavior without complexity. |
-| INR + AED dual pricing | Target audience thinks in INR (lakh/crore) but Dubai real estate is priced in AED. Eliminates mental math. |
+| Single configurable persona | Simpler to build/test/maintain than multi-agent. Stage-based prompting gives specialized behavior without complexity. |
+| Persona and currency from env vars | The same agent can sell any catalog for any company without code changes. |
 | Lazy-init LLMClient | Avoids get_settings() call at module import time. Important for testing and docs generation. |
-| exclude_unset=True on updates | Allows explicit null to clear DB columns. Agent uses this when lead says "no budget". |
+| exclude_unset=True on updates | Allows explicit null to clear DB columns. Agent uses this when a lead says "budget doesn't matter". |
 | Session commit inside repos | Self-contained write operations. Downside: no transactional rollback across multiple repo calls. Acceptable for this app's write patterns. |
 | Meeting scheduled_at as string parse | Agent sends ISO 8601 strings, service parses to datetime. Decouples agent from ORM datetime type. |

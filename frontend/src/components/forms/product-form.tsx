@@ -1,58 +1,60 @@
 import { useForm, useWatch, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { propertyFormSchema, type PropertyFormData } from "@/schemas/validators"
+import { productFormSchema, type ProductFormData } from "@/schemas/validators"
 import { Button, Input, Label, Textarea, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
-import { PROPERTY_TYPES, PROPERTY_STATUSES, DUBAI_AREAS } from "@/config/constants"
+import { PRODUCT_CATEGORIES, PRODUCT_STATUSES, BILLING_PERIODS, DEFAULT_CURRENCY } from "@/config/constants"
 import { Loader2Icon, XIcon } from "lucide-react"
 import { useState } from "react"
 
-const AMENITY_OPTIONS = [
-  "Pool", "Gym", "Parking", "Concierge", "Balcony",
-  "Sea View", "City View", "Maid's Room", "Study Room",
-  "Smart Home", "Central AC", "Built-in Wardrobes",
+const FEATURE_OPTIONS = [
+  "Deal pipeline", "Sales forecasting", "Email sync", "Email sequences",
+  "Workflow automation", "Lead routing", "API access", "Webhooks",
+  "SSO / SAML", "Audit logs", "Live chat", "Knowledge base",
 ]
 
-interface PropertyFormProps {
-  onSubmit: (data: PropertyFormData) => void
-  defaultValues?: Partial<PropertyFormData>
+interface ProductFormProps {
+  onSubmit: (data: ProductFormData) => void
+  defaultValues?: Partial<ProductFormData>
   loading?: boolean
 }
 
-export function PropertyForm({ onSubmit, defaultValues, loading }: PropertyFormProps) {
-  const [amenities, setAmenities] = useState<string[]>(defaultValues?.amenities ?? [])
+export function ProductForm({ onSubmit, defaultValues, loading }: ProductFormProps) {
+  const [features, setFeatures] = useState<string[]>(defaultValues?.features ?? [])
   const {
     register,
     handleSubmit,
     setValue,
     control,
     formState: { errors },
-  } = useForm<PropertyFormData>({
-    resolver: zodResolver(propertyFormSchema) as unknown as Resolver<PropertyFormData>,
+  } = useForm<ProductFormData>({
+    resolver: zodResolver(productFormSchema) as unknown as Resolver<ProductFormData>,
     defaultValues: {
-      status: "available",
+      status: "active",
+      billing_period: "monthly",
+      min_seats: 1,
       featured: false,
-      amenities: [],
+      features: [],
       ...defaultValues,
     },
   })
 
-  const watchedValues = useWatch({ control } as { control: Control<PropertyFormData> })
+  const watchedValues = useWatch({ control } as { control: Control<ProductFormData> })
 
-  const toggleAmenity = (amenity: string) => {
-    const next = amenities.includes(amenity)
-      ? amenities.filter((a) => a !== amenity)
-      : [...amenities, amenity]
-    setAmenities(next)
-    setValue("amenities", next)
+  const toggleFeature = (feature: string) => {
+    const next = features.includes(feature)
+      ? features.filter((f) => f !== feature)
+      : [...features, feature]
+    setFeatures(next)
+    setValue("features", next)
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {/* Title */}
+      {/* Name */}
       <div className="space-y-2">
-        <Label htmlFor="title">Title *</Label>
-        <Input id="title" placeholder="Luxury 2BR Apartment in Dubai Marina" {...register("title")} />
-        {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+        <Label htmlFor="name">Name *</Label>
+        <Input id="name" placeholder="CRM Growth" {...register("name")} />
+        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
       </div>
 
       {/* Description */}
@@ -60,7 +62,7 @@ export function PropertyForm({ onSubmit, defaultValues, loading }: PropertyFormP
         <Label htmlFor="description">Description *</Label>
         <Textarea
           id="description"
-          placeholder="Describe the property in detail..."
+          placeholder="Who this plan is for and what it includes..."
           rows={4}
           {...register("description")}
         />
@@ -70,47 +72,46 @@ export function PropertyForm({ onSubmit, defaultValues, loading }: PropertyFormP
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Price */}
         <div className="space-y-2">
-          <Label htmlFor="price">Price (AED) *</Label>
-          <Input id="price" type="number" placeholder="2500000" {...register("price")} />
+          <Label htmlFor="price">Price ({DEFAULT_CURRENCY}) *</Label>
+          <Input id="price" type="number" step="0.01" placeholder="39" {...register("price")} />
           {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
         </div>
 
-        {/* Type */}
+        {/* Billing period */}
         <div className="space-y-2">
-          <Label htmlFor="type">Type *</Label>
+          <Label htmlFor="billing_period">Billing period</Label>
           <Select
-            defaultValue={watchedValues.type}
-            onValueChange={(v) => setValue("type", v as PropertyFormData["type"])}
+            defaultValue={watchedValues.billing_period}
+            onValueChange={(v) => setValue("billing_period", v as ProductFormData["billing_period"])}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select type" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(PROPERTY_TYPES).map(([key, val]) => (
+              {Object.entries(BILLING_PERIODS).map(([key, val]) => (
                 <SelectItem key={key} value={key}>{val.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.type && <p className="text-xs text-destructive">{errors.type.message}</p>}
         </div>
 
-        {/* Location */}
+        {/* Category */}
         <div className="space-y-2">
-          <Label htmlFor="location">Location *</Label>
+          <Label htmlFor="category">Category *</Label>
           <Select
-            defaultValue={watchedValues.location}
-            onValueChange={(v) => setValue("location", v)}
+            defaultValue={watchedValues.category}
+            onValueChange={(v) => setValue("category", v as ProductFormData["category"])}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select location" />
+              <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              {DUBAI_AREAS.map((area) => (
-                <SelectItem key={area} value={area}>{area}</SelectItem>
+              {Object.entries(PRODUCT_CATEGORIES).map(([key, val]) => (
+                <SelectItem key={key} value={key}>{val.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.location && <p className="text-xs text-destructive">{errors.location.message}</p>}
+          {errors.category && <p className="text-xs text-destructive">{errors.category.message}</p>}
         </div>
 
         {/* Status */}
@@ -118,56 +119,51 @@ export function PropertyForm({ onSubmit, defaultValues, loading }: PropertyFormP
           <Label htmlFor="status">Status</Label>
           <Select
             defaultValue={watchedValues.status}
-            onValueChange={(v) => setValue("status", v as PropertyFormData["status"])}
+            onValueChange={(v) => setValue("status", v as ProductFormData["status"])}
           >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(PROPERTY_STATUSES).map(([key, val]) => (
+              {Object.entries(PRODUCT_STATUSES).map(([key, val]) => (
                 <SelectItem key={key} value={key}>{val.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Bedrooms */}
+        {/* Min seats */}
         <div className="space-y-2">
-          <Label htmlFor="bedrooms">Bedrooms</Label>
-          <Input id="bedrooms" type="number" min={0} max={20} {...register("bedrooms")} />
+          <Label htmlFor="min_seats">Min seats</Label>
+          <Input id="min_seats" type="number" min={1} {...register("min_seats")} />
         </div>
 
-        {/* Bathrooms */}
+        {/* Max seats */}
         <div className="space-y-2">
-          <Label htmlFor="bathrooms">Bathrooms</Label>
-          <Input id="bathrooms" type="number" min={0} max={20} {...register("bathrooms")} />
-        </div>
-
-        {/* Area sqft */}
-        <div className="space-y-2">
-          <Label htmlFor="area_sqft">Area (sq.ft)</Label>
-          <Input id="area_sqft" type="number" placeholder="1450" {...register("area_sqft")} />
+          <Label htmlFor="max_seats">Max seats</Label>
+          <Input id="max_seats" type="number" min={1} placeholder="Unlimited" {...register("max_seats")} />
+          {errors.max_seats && <p className="text-xs text-destructive">{errors.max_seats.message}</p>}
         </div>
       </div>
 
-      {/* Amenities */}
+      {/* Features */}
       <div className="space-y-2">
-        <Label>Amenities</Label>
+        <Label>Features</Label>
         <div className="flex flex-wrap gap-1.5">
-          {AMENITY_OPTIONS.map((amenity) => {
-            const selected = amenities.includes(amenity)
+          {FEATURE_OPTIONS.map((feature) => {
+            const selected = features.includes(feature)
             return (
               <button
-                key={amenity}
+                key={feature}
                 type="button"
-                onClick={() => toggleAmenity(amenity)}
+                onClick={() => toggleFeature(feature)}
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                   selected
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
-                {amenity}
+                {feature}
                 {selected && <XIcon className="size-3" />}
               </button>
             )
@@ -183,14 +179,14 @@ export function PropertyForm({ onSubmit, defaultValues, loading }: PropertyFormP
           onCheckedChange={(v) => setValue("featured", v)}
         />
         <Label htmlFor="featured" className="text-sm font-normal">
-          Featured property
+          Featured plan
         </Label>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="submit" disabled={loading}>
           {loading && <Loader2Icon className="mr-1.5 size-4 animate-spin" />}
-          Save Property
+          Save Product
         </Button>
       </div>
     </form>

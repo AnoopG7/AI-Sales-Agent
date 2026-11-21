@@ -2,7 +2,7 @@ import { useForm, useWatch, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { leadFormSchema, type LeadFormData } from "@/schemas/validators"
 import { Button, Input, Label, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
-import { LEAD_STATUSES, LEAD_SOURCES, PROPERTY_TYPES, DUBAI_AREAS } from "@/config/constants"
+import { LEAD_STATUSES, LEAD_SOURCES, DEFAULT_CURRENCY } from "@/config/constants"
 import { Loader2Icon } from "lucide-react"
 
 interface LeadFormProps {
@@ -42,7 +42,7 @@ export function LeadForm({ onSubmit, defaultValues, loading }: LeadFormProps) {
         {/* Phone */}
         <div className="space-y-2">
           <Label htmlFor="phone">Phone *</Label>
-          <Input id="phone" placeholder="+971 50 123 4567" {...register("phone")} />
+          <Input id="phone" placeholder="+1 415 555 0132" {...register("phone")} />
           {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
         </div>
 
@@ -73,56 +73,33 @@ export function LeadForm({ onSubmit, defaultValues, loading }: LeadFormProps) {
 
         {/* Budget Min */}
         <div className="space-y-2">
-          <Label htmlFor="budget_min">Budget Min (AED)</Label>
-          <Input id="budget_min" type="number" placeholder="1,000,000" {...register("budget_min")} />
+          <Label htmlFor="budget_min">Budget Min ({DEFAULT_CURRENCY})</Label>
+          <Input id="budget_min" type="number" placeholder="500" {...register("budget_min")} />
         </div>
 
         {/* Budget Max */}
         <div className="space-y-2">
-          <Label htmlFor="budget_max">Budget Max (AED)</Label>
-          <Input id="budget_max" type="number" placeholder="3,000,000" {...register("budget_max")} />
+          <Label htmlFor="budget_max">Budget Max ({DEFAULT_CURRENCY})</Label>
+          <Input id="budget_max" type="number" placeholder="1,500" {...register("budget_max")} />
         </div>
 
-        {/* Property Type */}
+        {/* Company */}
         <div className="space-y-2">
-          <Label htmlFor="preferred_type">Property Type</Label>
-          <Select
-            defaultValue={watchedValues.preferred_type ?? ""}
-            onValueChange={(v) => setValue("preferred_type", v as LeadFormData["preferred_type"] ?? undefined)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Any type" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(PROPERTY_TYPES).map(([key, val]) => (
-                <SelectItem key={key} value={key}>{val.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="company">Company</Label>
+          <Input id="company" placeholder="Brightline Logistics" {...register("company")} />
         </div>
 
-        {/* Location */}
+        {/* Team size */}
         <div className="space-y-2">
-          <Label htmlFor="preferred_location">Preferred Location</Label>
-          <Select
-            defaultValue={watchedValues.preferred_location ?? ""}
-            onValueChange={(v) => setValue("preferred_location", v || undefined)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Any area" />
-            </SelectTrigger>
-            <SelectContent>
-              {DUBAI_AREAS.map((area) => (
-                <SelectItem key={area} value={area}>{area}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="team_size">Team size (seats)</Label>
+          <Input id="team_size" type="number" min={1} placeholder="25" {...register("team_size")} />
+          {errors.team_size && <p className="text-xs text-destructive">{errors.team_size.message}</p>}
         </div>
 
-        {/* Bedrooms */}
+        {/* Product interest */}
         <div className="space-y-2">
-          <Label htmlFor="preferred_bedrooms">Bedrooms</Label>
-          <Input id="preferred_bedrooms" type="number" min={0} max={20} placeholder="Any" {...register("preferred_bedrooms")} />
+          <Label htmlFor="product_interest">Product interest</Label>
+          <Input id="product_interest" placeholder="Pipeline tracking and forecasting" {...register("product_interest")} />
         </div>
 
         {/* Status */}

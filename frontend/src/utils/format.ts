@@ -5,16 +5,18 @@
  * Import from "@/utils/format" or via the "@/utils" barrel.
  */
 
+import { DEFAULT_CURRENCY } from "@/config/constants"
+
 /**
- * Format a number as AED currency.
- * e.g. 2500000 → "AED 2.5M", 750000 → "AED 750,000"
+ * Format a number as a price with its currency code.
+ * e.g. 2500000 → "USD 2.5M", 39 → "USD 39"
  */
-export function formatPriceAED(amount: number): string {
+export function formatPrice(amount: number, currency: string = DEFAULT_CURRENCY): string {
   if (amount >= 1_000_000) {
     const millions = amount / 1_000_000
-    return `AED ${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)}M`
+    return `${currency} ${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)}M`
   }
-  return `AED ${amount.toLocaleString()}`
+  return `${currency} ${amount.toLocaleString()}`
 }
 
 /**
@@ -44,7 +46,7 @@ export function truncate(str: string, maxLength: number = 100): string {
 }
 
 /**
- * Generate initials from a name (e.g. "Ahmed Khan" → "AK").
+ * Generate initials from a name (e.g. "Jordan Lee" → "JL").
  */
 export function getInitials(name: string): string {
   return name
@@ -56,12 +58,11 @@ export function getInitials(name: string): string {
 }
 
 /**
- * Format a date to a localized string in Dubai timezone.
+ * Format a date in the user's locale and timezone.
  */
-export function formatDateDubai(date: Date | string): string {
+export function formatDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date
-  return d.toLocaleDateString("en-AE", {
-    timeZone: "Asia/Dubai",
+  return d.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -69,12 +70,11 @@ export function formatDateDubai(date: Date | string): string {
 }
 
 /**
- * Format a date and time to a localized string in Dubai timezone.
+ * Format a date and time in the user's locale and timezone.
  */
-export function formatDateTimeDubai(date: Date | string): string {
+export function formatDateTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date
-  return d.toLocaleString("en-AE", {
-    timeZone: "Asia/Dubai",
+  return d.toLocaleString(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",

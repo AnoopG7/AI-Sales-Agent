@@ -20,31 +20,35 @@ export const leadFormSchema = z.object({
   source: z.enum(["meta_ads", "manual", "referral", "website", "other"]).default("manual"),
   budget_min: z.coerce.number().min(0).optional(),
   budget_max: z.coerce.number().min(0).optional(),
-  preferred_type: z.enum(["apartment", "villa", "townhouse", "penthouse", "office", "commercial", "land"]).optional(),
-  preferred_location: z.string().optional(),
-  preferred_bedrooms: z.coerce.number().min(0).max(20).optional(),
+  company: z.string().optional(),
+  team_size: z.coerce.number().int().min(1).max(100000).optional(),
+  product_interest: z.string().optional(),
   notes: z.string().optional(),
 })
 
 export type LeadFormData = z.infer<typeof leadFormSchema>
 
-// --- Property Schemas ---
+// --- Product Schemas ---
 
-export const propertyFormSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(20, "Description must be at least 20 characters"),
-  price: z.coerce.number().positive("Price must be positive"),
-  type: z.enum(["apartment", "villa", "townhouse", "penthouse", "office", "commercial", "land"]),
-  location: z.string().min(2, "Location is required"),
-  bedrooms: z.coerce.number().min(0).max(20).default(0),
-  bathrooms: z.coerce.number().min(0).max(20).default(0),
-  area_sqft: z.coerce.number().positive("Area must be positive"),
-  amenities: z.array(z.string()).default([]),
-  status: z.enum(["available", "sold", "under_offer", "coming_soon"]).default("available"),
-  featured: z.boolean().default(false),
-})
+export const productFormSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    description: z.string().min(10, "Description must be at least 10 characters"),
+    category: z.enum(["crm", "analytics", "automation", "support", "add_on"]),
+    price: z.coerce.number().min(0, "Price can't be negative"),
+    billing_period: z.enum(["monthly", "annual", "one_time"]).default("monthly"),
+    min_seats: z.coerce.number().int().min(1).default(1),
+    max_seats: z.coerce.number().int().min(1).optional(),
+    features: z.array(z.string()).default([]),
+    status: z.enum(["active", "beta", "deprecated", "archived"]).default("active"),
+    featured: z.boolean().default(false),
+  })
+  .refine((d) => d.max_seats === undefined || d.max_seats >= d.min_seats, {
+    message: "Max seats must be at least min seats",
+    path: ["max_seats"],
+  })
 
-export type PropertyFormData = z.infer<typeof propertyFormSchema>
+export type ProductFormData = z.infer<typeof productFormSchema>
 
 // --- Meeting Schemas ---
 
@@ -86,7 +90,7 @@ export const settingsSchema = z.object({
   ai_temperature: z.coerce.number().min(0).max(2).default(0.7),
   business_hours_start: z.string().default("09:00"),
   business_hours_end: z.string().default("19:00"),
-  timezone: z.string().default("Asia/Dubai"),
+  timezone: z.string().default("UTC"),
 })
 
 export type SettingsFormData = z.infer<typeof settingsSchema>

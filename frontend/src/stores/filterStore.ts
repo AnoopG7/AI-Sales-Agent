@@ -12,25 +12,25 @@ interface FilterState {
   leadSearchQuery: string
   leadDateRange: { from: string | null; to: string | null }
 
-  // Property filters
-  propertyTypeFilter: string[]
-  propertyPriceRange: { min: number | null; max: number | null }
-  propertyBedroomsFilter: number | null
-  propertyLocationFilter: string[]
-  propertySearchQuery: string
+  // Product filters
+  productCategoryFilter: string[]
+  productPriceRange: { min: number | null; max: number | null }
+  productTeamSizeFilter: number | null
+  productStatusFilter: string[]
+  productSearchQuery: string
 
   // Actions
   setLeadStatusFilter: (statuses: LeadStatus[]) => void
   setLeadSourceFilter: (sources: LeadSource[]) => void
   setLeadSearchQuery: (query: string) => void
   setLeadDateRange: (range: { from: string | null; to: string | null }) => void
-  setPropertyTypeFilter: (types: string[]) => void
-  setPropertyPriceRange: (range: { min: number | null; max: number | null }) => void
-  setPropertyBedroomsFilter: (bedrooms: number | null) => void
-  setPropertyLocationFilter: (locations: string[]) => void
-  setPropertySearchQuery: (query: string) => void
+  setProductCategoryFilter: (categories: string[]) => void
+  setProductPriceRange: (range: { min: number | null; max: number | null }) => void
+  setProductTeamSizeFilter: (teamSize: number | null) => void
+  setProductStatusFilter: (statuses: string[]) => void
+  setProductSearchQuery: (query: string) => void
   resetLeadFilters: () => void
-  resetPropertyFilters: () => void
+  resetProductFilters: () => void
 }
 
 export const useFilterStore = create<FilterState>((set) => ({
@@ -40,12 +40,12 @@ export const useFilterStore = create<FilterState>((set) => ({
   leadSearchQuery: "",
   leadDateRange: { from: null, to: null },
 
-  // Property defaults
-  propertyTypeFilter: [],
-  propertyPriceRange: { min: null, max: null },
-  propertyBedroomsFilter: null,
-  propertyLocationFilter: [],
-  propertySearchQuery: "",
+  // Product defaults
+  productCategoryFilter: [],
+  productPriceRange: { min: null, max: null },
+  productTeamSizeFilter: null,
+  productStatusFilter: [],
+  productSearchQuery: "",
 
   // Lead actions
   setLeadStatusFilter: (leadStatusFilter) => set({ leadStatusFilter }),
@@ -53,12 +53,12 @@ export const useFilterStore = create<FilterState>((set) => ({
   setLeadSearchQuery: (leadSearchQuery) => set({ leadSearchQuery }),
   setLeadDateRange: (leadDateRange) => set({ leadDateRange }),
 
-  // Property actions
-  setPropertyTypeFilter: (propertyTypeFilter) => set({ propertyTypeFilter }),
-  setPropertyPriceRange: (propertyPriceRange) => set({ propertyPriceRange }),
-  setPropertyBedroomsFilter: (propertyBedroomsFilter) => set({ propertyBedroomsFilter }),
-  setPropertyLocationFilter: (propertyLocationFilter) => set({ propertyLocationFilter }),
-  setPropertySearchQuery: (propertySearchQuery) => set({ propertySearchQuery }),
+  // Product actions
+  setProductCategoryFilter: (productCategoryFilter) => set({ productCategoryFilter }),
+  setProductPriceRange: (productPriceRange) => set({ productPriceRange }),
+  setProductTeamSizeFilter: (productTeamSizeFilter) => set({ productTeamSizeFilter }),
+  setProductStatusFilter: (productStatusFilter) => set({ productStatusFilter }),
+  setProductSearchQuery: (productSearchQuery) => set({ productSearchQuery }),
 
   // Reset
   resetLeadFilters: () =>
@@ -68,12 +68,12 @@ export const useFilterStore = create<FilterState>((set) => ({
       leadSearchQuery: "",
       leadDateRange: { from: null, to: null },
     }),
-  resetPropertyFilters: () =>
+  resetProductFilters: () =>
     set({
-      propertyTypeFilter: [],
-      propertyPriceRange: { min: null, max: null },
-      propertyBedroomsFilter: null,
-      propertyLocationFilter: [],
-      propertySearchQuery: "",
+      productCategoryFilter: [],
+      productPriceRange: { min: null, max: null },
+      productTeamSizeFilter: null,
+      productStatusFilter: [],
+      productSearchQuery: "",
     }),
 }))

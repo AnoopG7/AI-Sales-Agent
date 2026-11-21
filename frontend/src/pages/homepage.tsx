@@ -10,10 +10,10 @@ import {
   CardHeader, CardTitle, Tabs, TabsContent, TabsList,
   TabsTrigger, Separator,
 } from "@/components/ui"
-import { LoginForm, LeadForm, PropertyForm, MeetingForm, SettingsForm } from "@/components/forms"
+import { LoginForm, LeadForm, ProductForm, MeetingForm, SettingsForm } from "@/components/forms"
 import {
   UsersIcon,
-  Building2Icon,
+  PackageIcon,
   CalendarIcon,
   TrendingUpIcon,
   PlusIcon,
@@ -35,11 +35,11 @@ interface SampleLead {
 }
 
 const sampleLeads: SampleLead[] = [
-  { id: "1", name: "Ahmed Al Maktoum", phone: "+971 50 123 4567", status: "qualified", source: "meta_ads", budget: "AED 2-3M", created: "2h ago" },
-  { id: "2", name: "Fatima Hassan", phone: "+971 55 987 6543", status: "new", source: "website", budget: "AED 1.5M", created: "30m ago" },
-  { id: "3", name: "Omar Rashid", phone: "+971 52 456 7890", status: "meeting_scheduled", source: "referral", budget: "AED 5-8M", created: "1d ago" },
-  { id: "4", name: "Layla Khan", phone: "+971 54 321 0987", status: "converted", source: "meta_ads", budget: "AED 3.5M", created: "3d ago" },
-  { id: "5", name: "Khalid Al Suwaidi", phone: "+971 56 789 0123", status: "lost", source: "manual", budget: "AED 10M+", created: "5d ago" },
+  { id: "1", name: "Jordan Lee", phone: "+1 415 555 0132", status: "qualified", source: "meta_ads", budget: "USD 1,000-1,500/mo", created: "2h ago" },
+  { id: "2", name: "Priya Nair", phone: "+44 20 7946 0958", status: "new", source: "website", budget: "USD 500/mo", created: "30m ago" },
+  { id: "3", name: "Marcus Chen", phone: "+65 6123 4567", status: "meeting_scheduled", source: "referral", budget: "USD 3-5K/mo", created: "1d ago" },
+  { id: "4", name: "Sofia Alvarez", phone: "+34 912 345 678", status: "converted", source: "meta_ads", budget: "USD 2,000/mo", created: "3d ago" },
+  { id: "5", name: "Daniel Okafor", phone: "+234 1 234 5678", status: "lost", source: "manual", budget: "USD 10K+/mo", created: "5d ago" },
 ]
 
 const leadColumns: Column<SampleLead>[] = [
@@ -100,10 +100,10 @@ export default function Homepage() {
             trendValue="12%"
           />
           <StatCard
-            title="Properties"
-            value="86"
-            description="42 available"
-            icon={<Building2Icon className="size-5" />}
+            title="Products"
+            value="11"
+            description="10 active"
+            icon={<PackageIcon className="size-5" />}
             trend="neutral"
             trendValue="Same"
           />
@@ -139,10 +139,10 @@ export default function Homepage() {
           <StatusBadge type="lead" status="lost" />
           <StatusBadge type="lead" status="spam" />
           <Separator orientation="vertical" className="h-5" />
-          <StatusBadge type="property" status="available" />
-          <StatusBadge type="property" status="sold" />
-          <StatusBadge type="property" status="under_offer" />
-          <StatusBadge type="property" status="coming_soon" />
+          <StatusBadge type="product" status="active" />
+          <StatusBadge type="product" status="beta" />
+          <StatusBadge type="product" status="deprecated" />
+          <StatusBadge type="product" status="archived" />
           <Separator orientation="vertical" className="h-5" />
           <StatusBadge type="meeting" status="scheduled" />
           <StatusBadge type="meeting" status="completed" />
@@ -279,7 +279,7 @@ export default function Homepage() {
           <TabsList>
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="lead">Lead</TabsTrigger>
-            <TabsTrigger value="property">Property</TabsTrigger>
+            <TabsTrigger value="product">Product</TabsTrigger>
             <TabsTrigger value="meeting">Meeting</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -306,8 +306,8 @@ export default function Homepage() {
                 <LeadForm
                   onSubmit={(data) => toast(`Lead saved: ${data.name}`)}
                   defaultValues={{
-                    name: "Ahmed Al Maktoum",
-                    phone: "+971 50 123 4567",
+                    name: "Jordan Lee",
+                    phone: "+1 415 555 0132",
                     source: "meta_ads",
                     status: "new",
                   }}
@@ -315,20 +315,20 @@ export default function Homepage() {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="property">
+          <TabsContent value="product">
             <Card>
               <CardHeader>
-                <CardTitle>Property Form</CardTitle>
-                <CardDescription>Add a new property listing</CardDescription>
+                <CardTitle>Product Form</CardTitle>
+                <CardDescription>Add a plan or product to the catalog</CardDescription>
               </CardHeader>
               <CardContent className="max-w-2xl">
-                <PropertyForm
-                  onSubmit={(data) => toast(`Property saved: ${data.title}`)}
+                <ProductForm
+                  onSubmit={(data) => toast(`Product saved: ${data.name}`)}
                   defaultValues={{
-                    title: "Luxury 2BR Apartment in Dubai Marina",
-                    type: "apartment",
-                    location: "Dubai Marina",
-                    status: "available",
+                    name: "CRM Growth",
+                    category: "crm",
+                    billing_period: "monthly",
+                    status: "active",
                   }}
                 />
               </CardContent>
@@ -358,9 +358,9 @@ export default function Homepage() {
                 <SettingsForm
                   onSubmit={(data) => toast(`Settings saved: ${data.company_name}`)}
                   defaultValues={{
-                    company_name: "LeadGen Real Estate",
+                    company_name: "Acme Cloud",
                     admin_email: "admin@example.com",
-                    admin_whatsapp: "971501234567",
+                    admin_whatsapp: "14155550132",
                   }}
                 />
               </CardContent>

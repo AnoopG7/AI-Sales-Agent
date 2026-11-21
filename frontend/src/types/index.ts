@@ -17,9 +17,9 @@ export interface Lead {
   source: "meta_ads" | "manual" | "referral" | "website" | "other"
   budget_min: number | null
   budget_max: number | null
-  preferred_type: string | null
-  preferred_location: string | null
-  preferred_bedrooms: number | null
+  company: string | null
+  team_size: number | null
+  product_interest: string | null
   conversation_stage: string | null
   notes: string | null
   metadata: Record<string, unknown>
@@ -29,31 +29,23 @@ export interface Lead {
   updated_at: string
 }
 
-// --- Property ---
+// --- Product (sales catalog) ---
 
-export interface Property {
+export interface Product {
   id: string
-  title: string
+  name: string
   description: string | null
-  type: "apartment" | "villa" | "townhouse" | "penthouse" | "office" | "commercial" | "land"
-  location: string
+  category: "crm" | "analytics" | "automation" | "support" | "add_on"
   price: number
-  bedrooms: number
-  bathrooms: number
-  area_sqft: number | null
-  amenities: string[]
-  images: PropertyImage[]
-  status: "available" | "sold" | "under_offer" | "coming_soon"
+  billing_period: "monthly" | "annual" | "one_time"
+  min_seats: number
+  max_seats: number | null
+  features: string[]
+  status: "active" | "beta" | "deprecated" | "archived"
   featured: boolean
-  metadata: Record<string, unknown>
+  extra_data: Record<string, unknown>
   created_at: string
   updated_at: string
-}
-
-export interface PropertyImage {
-  url: string
-  alt: string
-  order: number
 }
 
 // --- Conversation & Messages ---

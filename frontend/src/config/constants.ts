@@ -2,8 +2,11 @@
  * Application-wide constants.
  */
 
-export const APP_NAME = "LeadGen"
-export const APP_DESCRIPTION = "Dubai Real Estate Lead Generation & AI Automation"
+export const APP_NAME = "SalesAgent"
+export const APP_DESCRIPTION = "AI sales agent for lead qualification and demo booking"
+
+/** Currency the product catalog is priced in (matches backend DEFAULT_CURRENCY). */
+export const DEFAULT_CURRENCY = "USD"
 
 /**
  * Lead status definitions with labels and colors.
@@ -34,31 +37,40 @@ export const LEAD_SOURCES = {
 export type LeadSource = keyof typeof LEAD_SOURCES
 
 /**
- * Property type definitions.
+ * Product category definitions.
  */
-export const PROPERTY_TYPES = {
-  apartment: { label: "Apartment", icon: "building-2" },
-  villa: { label: "Villa", icon: "home" },
-  townhouse: { label: "Townhouse", icon: "warehouse" },
-  penthouse: { label: "Penthouse", icon: "castle" },
-  office: { label: "Office", icon: "briefcase" },
-  commercial: { label: "Commercial", icon: "store" },
-  land: { label: "Land", icon: "map" },
+export const PRODUCT_CATEGORIES = {
+  crm: { label: "CRM", icon: "users" },
+  analytics: { label: "Analytics", icon: "bar-chart-3" },
+  automation: { label: "Automation", icon: "workflow" },
+  support: { label: "Support", icon: "life-buoy" },
+  add_on: { label: "Add-on", icon: "puzzle" },
 } as const
 
-export type PropertyType = keyof typeof PROPERTY_TYPES
+export type ProductCategory = keyof typeof PRODUCT_CATEGORIES
 
 /**
- * Property status definitions.
+ * Billing period definitions.
  */
-export const PROPERTY_STATUSES = {
-  available: { label: "Available", color: "green" },
-  sold: { label: "Sold", color: "red" },
-  under_offer: { label: "Under Offer", color: "yellow" },
-  coming_soon: { label: "Coming Soon", color: "blue" },
+export const BILLING_PERIODS = {
+  monthly: { label: "Monthly", suffix: "/seat/mo" },
+  annual: { label: "Annual", suffix: "/seat/yr" },
+  one_time: { label: "One-time", suffix: " one-time" },
 } as const
 
-export type PropertyStatus = keyof typeof PROPERTY_STATUSES
+export type BillingPeriod = keyof typeof BILLING_PERIODS
+
+/**
+ * Product status definitions.
+ */
+export const PRODUCT_STATUSES = {
+  active: { label: "Active", color: "green" },
+  beta: { label: "Beta", color: "blue" },
+  deprecated: { label: "Deprecated", color: "yellow" },
+  archived: { label: "Archived", color: "gray" },
+} as const
+
+export type ProductStatus = keyof typeof PRODUCT_STATUSES
 
 /**
  * Meeting status definitions.
@@ -73,29 +85,13 @@ export const MEETING_STATUSES = {
 export type MeetingStatus = keyof typeof MEETING_STATUSES
 
 /**
- * Dubai areas for property location filtering.
+ * Team-size bands for filtering leads and products.
  */
-export const DUBAI_AREAS = [
-  "Dubai Marina",
-  "Downtown Dubai",
-  "Palm Jumeirah",
-  "JBR",
-  "Business Bay",
-  "DIFC",
-  "Dubai Hills Estate",
-  "Emirates Hills",
-  "Arabian Ranches",
-  "Jumeirah Village Circle (JVC)",
-  "Dubai Creek Harbour",
-  "Damac Hills",
-  "Meydan",
-  "Al Barsha",
-  "Jumeirah Lakes Towers (JLT)",
-  "Dubai Silicon Oasis",
-  "Motor City",
-  "Sports City",
-  "City Walk",
-  "Bluewaters Island",
+export const TEAM_SIZE_BANDS = [
+  { label: "1-10", min: 1, max: 10 },
+  { label: "11-50", min: 11, max: 50 },
+  { label: "51-200", min: 51, max: 200 },
+  { label: "200+", min: 201, max: null },
 ] as const
 
 /**
@@ -104,7 +100,7 @@ export const DUBAI_AREAS = [
 export const NAV_ITEMS = [
   { label: "Dashboard", href: "/", icon: "layout-dashboard" },
   { label: "Leads", href: "/leads", icon: "users" },
-  { label: "Properties", href: "/properties", icon: "building-2" },
+  { label: "Products", href: "/products", icon: "package" },
   { label: "Conversations", href: "/conversations", icon: "message-circle" },
   { label: "Meetings", href: "/meetings", icon: "calendar" },
   { label: "Analytics", href: "/analytics", icon: "bar-chart-3" },

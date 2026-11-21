@@ -1,12 +1,12 @@
 import { cn } from "@/lib/utils"
 import {
   LEAD_STATUSES,
-  PROPERTY_STATUSES,
+  PRODUCT_STATUSES,
   MEETING_STATUSES,
 } from "@/config/constants"
-import type { LeadStatus, PropertyStatus, MeetingStatus } from "@/config/constants"
+import type { LeadStatus, ProductStatus, MeetingStatus } from "@/config/constants"
 
-type StatusType = "lead" | "property" | "meeting"
+type StatusType = "lead" | "product" | "meeting"
 
 const colorMap: Record<string, string> = {
   blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -20,7 +20,7 @@ const colorMap: Record<string, string> = {
 
 interface StatusBadgeProps {
   type: StatusType
-  status: LeadStatus | PropertyStatus | MeetingStatus
+  status: LeadStatus | ProductStatus | MeetingStatus
   dot?: boolean
   className?: string
 }
@@ -33,8 +33,8 @@ export function StatusBadge({ type, status, dot = true, className }: StatusBadge
     const config = LEAD_STATUSES[status as LeadStatus]
     label = config?.label ?? status
     color = colorMap[config?.color] ?? colorMap.gray
-  } else if (type === "property") {
-    const config = PROPERTY_STATUSES[status as PropertyStatus]
+  } else if (type === "product") {
+    const config = PRODUCT_STATUSES[status as ProductStatus]
     label = config?.label ?? status
     color = colorMap[config?.color] ?? colorMap.gray
   } else {

@@ -15,7 +15,7 @@ export function AuthLayout() {
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary">
             <span className="text-lg font-bold text-primary-foreground">S</span>
           </div>
-          <h1 className="font-heading text-xl font-bold text-foreground">LeadGen</h1>
+          <h1 className="font-heading text-xl font-bold text-foreground">SalesAgent</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Lead Generation Dashboard
           </p>

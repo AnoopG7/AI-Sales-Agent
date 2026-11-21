@@ -205,8 +205,8 @@
 }
 
 /* ============================================
-   Gold Accent Utility — Dubai real estate flair
-   Used sparingly: featured badges, premium cards
+   Gold Accent Utility
+   Used sparingly: featured badges, premium plans
    ============================================ */
 @utility gold {
   --gold: oklch(0.72 0.15 85);

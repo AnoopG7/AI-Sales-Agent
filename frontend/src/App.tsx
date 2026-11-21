@@ -12,7 +12,7 @@ export default function App() {
   }, [hydrate])
 
   return (
-    <ThemeProvider defaultTheme="system" storageKey="leadgen-theme">
+    <ThemeProvider defaultTheme="system" storageKey="salesagent-theme">
       <TooltipProvider>
         <AppRouter />
         <Toaster richColors position="top-right" />

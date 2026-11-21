@@ -17,7 +17,7 @@ export function MobileNav() {
             <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
               S
             </span>
-            <span className="font-heading font-semibold">LeadGen</span>
+            <span className="font-heading font-semibold">SalesAgent</span>
           </SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 p-2">

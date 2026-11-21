@@ -22,7 +22,7 @@ export function SettingsForm({ onSubmit, defaultValues, loading }: SettingsFormP
       ai_temperature: 0.7,
       business_hours_start: "09:00",
       business_hours_end: "19:00",
-      timezone: "Asia/Dubai",
+      timezone: "UTC",
       ...defaultValues,
     },
   })
@@ -35,7 +35,7 @@ export function SettingsForm({ onSubmit, defaultValues, loading }: SettingsFormP
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="company_name">Company Name</Label>
-            <Input id="company_name" placeholder="LeadGen Real Estate" {...register("company_name")} />
+            <Input id="company_name" placeholder="Acme Cloud" {...register("company_name")} />
             {errors.company_name && <p className="text-xs text-destructive">{errors.company_name.message}</p>}
           </div>
           <div className="space-y-2">
@@ -45,7 +45,7 @@ export function SettingsForm({ onSubmit, defaultValues, loading }: SettingsFormP
           </div>
           <div className="space-y-2">
             <Label htmlFor="admin_whatsapp">Admin WhatsApp</Label>
-            <Input id="admin_whatsapp" placeholder="971501234567" {...register("admin_whatsapp")} />
+            <Input id="admin_whatsapp" placeholder="14155550132" {...register("admin_whatsapp")} />
             {errors.admin_whatsapp && <p className="text-xs text-destructive">{errors.admin_whatsapp.message}</p>}
           </div>
         </div>

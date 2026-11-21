@@ -22,7 +22,7 @@ function getSystemTheme(): "dark" | "light" {
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "leadgen-theme",
+  storageKey = "salesagent-theme",
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme,

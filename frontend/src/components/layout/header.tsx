@@ -52,7 +52,7 @@ export function Header() {
       <div className="relative hidden md:block">
         <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search leads, properties..."
+          placeholder="Search leads, products..."
           className="h-8 w-56 rounded-lg pl-8 text-sm lg:w-72"
         />
       </div>

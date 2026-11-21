@@ -29,7 +29,7 @@ export function Sidebar() {
             <span className="flex size-7 items-center justify-center rounded-lg bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
               S
             </span>
-            <span className="font-heading text-base font-semibold">LeadGen</span>
+            <span className="font-heading text-base font-semibold">SalesAgent</span>
           </Link>
         )}
       </div>

@@ -1,6 +1,6 @@
 # AI Sales Agent
 
-The agent is the core of the WhatsApp pipeline. It answers inbound messages, qualifies the lead, recommends plans from the product catalog, books demo calls, sends follow-up emails, and hands off to a human when needed. It runs on Groq function calling (`llama-3.3-70b-versatile`) or a local Ollama model through the same OpenAI-compatible client.
+The agent is the core of the WhatsApp pipeline. It answers inbound messages, qualifies the lead, recommends plans from the product catalog, books demo calls, sends follow-up emails, and hands off to a human when needed. It runs on Groq function calling (`openai/gpt-oss-120b`) or a local Ollama model through the same OpenAI-compatible client.
 
 There is no LangChain or LangGraph: the orchestrator is a small, explicit loop (`backend/app/agent/orchestrator.py`), which keeps every step of the conversation inspectable.
 

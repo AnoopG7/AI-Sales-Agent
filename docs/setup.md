@@ -306,7 +306,7 @@ curl http://localhost:8000/api/v1/analytics/overview \
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `GROQ_API_KEY` | **Yes** | — | Groq API key from https://console.groq.com. Free tier: 100K tokens/day |
-| `GROQ_MODEL` | No | `llama-3.3-70b-versatile` | Model ID. Other options: `mixtral-8x7b-32768`, `gemma2-9b-it` |
+| `GROQ_MODEL` | No | `openai/gpt-oss-120b` | Model ID. A lighter option is `openai/gpt-oss-20b` (separate daily limit, weaker tool use) |
 
 #### WhatsApp
 

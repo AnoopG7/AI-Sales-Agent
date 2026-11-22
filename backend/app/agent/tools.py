@@ -6,6 +6,9 @@ Each tool has:
   - handler: async function that calls the appropriate service layer
 """
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -394,6 +397,16 @@ async def _update_lead_stage(args: dict, lead_id: str, session: AsyncSession) ->
     return f"Stage updated to: {args['stage']}"
 
 
+def _meeting_time(meeting, requested: str) -> str:
+    """Show the time in the offset the agent asked for, or in the meeting's timezone."""
+    asked = datetime.fromisoformat(requested)
+    if asked.tzinfo is not None:
+        local = meeting.scheduled_at.astimezone(asked.tzinfo)
+        return f"{local:%Y-%m-%d %H:%M} (UTC{local:%z})"
+    local = meeting.scheduled_at.astimezone(ZoneInfo(meeting.timezone))
+    return f"{local:%Y-%m-%d %H:%M} ({meeting.timezone})"
+
+
 async def _schedule_meeting(args: dict, lead_id: str, session: AsyncSession) -> str:
     service = MeetingService(session)
     meeting = await service.schedule_meeting(
@@ -404,7 +417,7 @@ async def _schedule_meeting(args: dict, lead_id: str, session: AsyncSession) -> 
     )
     return (
         f"Meeting scheduled! 📅\n"
-        f"Date: {meeting.scheduled_at}\n"
+        f"Date: {_meeting_time(meeting, args['scheduled_at'])}\n"
         f"Duration: {meeting.duration_minutes} min\n"
         f"Status: {meeting.status}"
     )

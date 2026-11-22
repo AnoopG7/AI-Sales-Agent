@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,9 +18,14 @@ class MeetingService:
         self, lead_id: str, scheduled_at: str, duration: int = 30,
         timezone: str = "UTC", notes: str | None = None,
     ) -> Meeting:
+        when = datetime.fromisoformat(scheduled_at)
+        if when.tzinfo is None:
+            # A time without an offset means local time in the meeting's timezone, not the
+            # database server's timezone.
+            when = when.replace(tzinfo=ZoneInfo(timezone))
         meeting = await self.repo.create({
             "lead_id": lead_id,
-            "scheduled_at": datetime.fromisoformat(scheduled_at),
+            "scheduled_at": when,
             "duration_minutes": duration,
             "timezone": timezone,
             "status": "scheduled",

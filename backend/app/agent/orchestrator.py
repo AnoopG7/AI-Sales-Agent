@@ -13,6 +13,7 @@ Flow:
 
 import asyncio
 import json
+from datetime import UTC, datetime
 
 import structlog
 from openai import RateLimitError
@@ -243,6 +244,7 @@ def _system_prompt(lead: Lead) -> str:
         agent_name=settings.AGENT_NAME,
         company_name=settings.COMPANY_NAME,
         currency=settings.DEFAULT_CURRENCY,
+        today=datetime.now(UTC).strftime("%A, %d %B %Y (UTC)"),
     )
 
 

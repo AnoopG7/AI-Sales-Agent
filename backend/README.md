@@ -12,7 +12,7 @@ FastAPI backend for the AI sales agent. It handles inbound WhatsApp conversation
 | Database Driver | asyncpg | 0.30+ | Native PostgreSQL async protocol |
 | ORM | SQLAlchemy | 2.0+ | Async Mapped style, select() queries |
 | Migrations | Alembic | 1.14+ | Auto-generated from ORM metadata |
-| AI Model | Groq | llama-3.3-70b-versatile | Function calling, 100K TPD free tier |
+| AI Model | Groq | openai/gpt-oss-120b | Function calling, free tier |
 | AI SDK | groq | 1.2+ | OpenAI-compatible API |
 | Auth | python-jose + bcrypt | — | JWT (HS256, 24h access, 7d refresh) |
 | WhatsApp | Meta Cloud API | v23.0 | REST API via httpx |

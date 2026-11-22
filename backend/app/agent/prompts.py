@@ -83,12 +83,16 @@ GUARDRAILS = """\
 """
 
 
-def render_system_prompt(lead_context: str, stage: str, agent_name: str, company_name: str, currency: str) -> str:
+def render_system_prompt(
+    lead_context: str, stage: str, agent_name: str, company_name: str, currency: str, today: str
+) -> str:
     """Assemble the full system prompt for the current lead and stage."""
     names = {"agent_name": agent_name, "company_name": company_name, "currency": currency}
     stage_instruction = STAGE_INSTRUCTIONS.get(stage, "").format(**names)
     return (
         f"{SYSTEM_PROMPT.format(**names)}\n\n"
+        f"## Today\n{today}. Resolve relative dates (\"tomorrow\", \"Monday\") from this date "
+        f"and never book a meeting in the past.\n\n"
         f"## Lead Profile\n{lead_context}\n\n"
         f"## Current Stage: {stage}\n{stage_instruction}\n\n"
         f"{GUARDRAILS}"

@@ -17,6 +17,7 @@ import asyncio
 
 from app.agent.orchestrator import process_message
 from app.core.database import close_db, get_session, init_db
+from app.core.logging import setup_logging
 from app.repositories.conversation_repo import ConversationRepository
 from app.services.lead_service import LeadService
 
@@ -41,6 +42,7 @@ def _show_lead(lead):
 
 
 async def _amain():
+    setup_logging()  # honour LOG_LEVEL like the API does
     await init_db()
 
     current_lead = None

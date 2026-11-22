@@ -48,7 +48,7 @@ Each lead moves through 7 stages: `greeting → qualification → discovery → 
 | **Database** | PostgreSQL 16 | Docker container, port 5432 |
 | **ORM** | SQLAlchemy 2.0 | Async ORM with asyncpg driver |
 | **Migrations** | Alembic | Auto-generated from ORM models |
-| **AI Model** | Groq (`llama-3.3-70b-versatile`) | Free tier, 100K tokens/day, fast inference |
+| **AI Model** | Groq (`openai/gpt-oss-120b`) | Free tier, fast inference with tool calling |
 | **AI Integration** | Groq Python SDK (OpenAI-compatible) | Function/tool calling |
 | **Auth** | python-jose + bcrypt | JWT (HS256, 24h expiry), bcrypt password hashing |
 | **WhatsApp** | Meta Cloud API v23.0 | Inbound webhook + outbound messaging |
